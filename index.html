@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mia Lou">
+  <title>Mia Lou's Spielkiste</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== HOME ===== -->
+  <div id="home-screen" class="screen">
+    <h1 class="home-title">Mia Lou's Spielkiste</h1>
+    <div class="home-hero-wrap"><img id="home-hero" src="images/start_hero.png" alt="Maus"></div>
+    <div id="home-points" class="points-bar"></div>
+    <div class="home-buttons">
+      <button class="home-btn home-btn-green" onclick="APP.goTo('em-start')">Einmaleins</button>
+      <button class="home-btn home-btn-purple" onclick="APP.goTo('dr-start')">Durch</button>
+      <button class="home-btn home-btn-teal" onclick="APP.goTo('pl-start')">Plus</button>
+      <button class="home-btn home-btn-orange" onclick="APP.goTo('mi-start')">Minus</button>
+      <button class="home-btn home-btn-blue" onclick="APP.goTo('rs-start')">Rechtschreibung</button>
+      <button class="home-btn home-btn-gold" onclick="APP.goTo('worlds')">Welt der Preise</button>
+    </div>
+  </div>
+
+  <!-- ===== EINMALEINS START ===== -->
+  <div id="em-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="em-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Einmaleins</h1>
+    <div id="em-start-image-wrap" class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Welche Reihen?</p>
+    <div id="em-row-selector">
+      <button class="row-btn row-all selected" data-row="all" onclick="EM.toggleRow(this)">Alle</button>
+      <button class="row-btn" data-row="1" onclick="EM.toggleRow(this)">1</button>
+      <button class="row-btn" data-row="2" onclick="EM.toggleRow(this)">2</button>
+      <button class="row-btn" data-row="3" onclick="EM.toggleRow(this)">3</button>
+      <button class="row-btn" data-row="4" onclick="EM.toggleRow(this)">4</button>
+      <button class="row-btn" data-row="5" onclick="EM.toggleRow(this)">5</button>
+      <button class="row-btn" data-row="6" onclick="EM.toggleRow(this)">6</button>
+      <button class="row-btn" data-row="7" onclick="EM.toggleRow(this)">7</button>
+      <button class="row-btn" data-row="8" onclick="EM.toggleRow(this)">8</button>
+      <button class="row-btn" data-row="9" onclick="EM.toggleRow(this)">9</button>
+      <button class="row-btn" data-row="10" onclick="EM.toggleRow(this)">10</button>
+    </div>
+    <div id="em-fg-section" class="fg-section">
+      <button id="em-fg-btn" class="count-btn fg-btn disabled" onclick="EM.selectFastGeschafft()">Fast geschafft</button>
+      <p id="em-fg-info" class="fg-info">Noch keine Fehler gespeichert</p>
+    </div>
+    <p id="em-start-count" class="start-count">100 Aufgaben</p>
+    <button class="start-btn" onclick="EM.startGame()">Los geht's!</button>
+    <div id="em-history-section" class="history-section">
+      <button id="em-history-toggle" class="history-toggle" onclick="EM.toggleHistory()">Historie anzeigen</button>
+      <div id="em-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== EINMALEINS GAME ===== -->
+  <div id="em-game-screen" class="screen hidden">
+    <header><h1>Einmaleins</h1>
+      <div class="score-bar"><span id="em-score-text">0 / 0</span>
+        <div class="progress-track"><div id="em-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="em-scene" class="scene-container"><img id="em-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="em-particles" class="particles"></div></div>
+    <div id="em-question-area" class="question-area">
+      <p id="em-prompt" class="prompt-text"></p>
+      <div class="math-display"><span id="em-factor-a" class="factor"></span><span class="op">x</span><span id="em-factor-b" class="factor"></span><span class="eq">=</span><span id="em-answer" class="answer-box">?</span></div>
+      <div class="numpad">
+        <button class="num-btn" data-val="1" onclick="EM.numpad('1')">1</button><button class="num-btn" data-val="2" onclick="EM.numpad('2')">2</button><button class="num-btn" data-val="3" onclick="EM.numpad('3')">3</button>
+        <button class="num-btn" data-val="4" onclick="EM.numpad('4')">4</button><button class="num-btn" data-val="5" onclick="EM.numpad('5')">5</button><button class="num-btn" data-val="6" onclick="EM.numpad('6')">6</button>
+        <button class="num-btn" data-val="7" onclick="EM.numpad('7')">7</button><button class="num-btn" data-val="8" onclick="EM.numpad('8')">8</button><button class="num-btn" data-val="9" onclick="EM.numpad('9')">9</button>
+        <button class="num-btn num-del" data-val="del" onclick="EM.numpad('del')">&#9003;</button><button class="num-btn" data-val="0" onclick="EM.numpad('0')">0</button><button class="num-btn num-ok" data-val="ok" onclick="EM.numpad('ok')">OK</button>
+      </div>
+      <div id="em-feedback" class="hidden"></div>
+    </div>
+    <div id="em-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="em-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="em-break-fill" class="break-timer-fill"></div></div><span id="em-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="EM.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="em-end" class="end-screen hidden">
+      <h2 id="em-end-title"></h2><p id="em-end-msg"></p><div id="em-end-stats"></div>
+      <p class="eval-label">Bewertung pro Reihe:</p><div id="em-end-rows" class="row-eval"></div>
+      <button class="restart-btn" onclick="EM.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== DURCH START ===== -->
+  <div id="dr-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="dr-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Durch</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Wie viele Aufgaben?</p>
+    <div id="dr-count-selector" class="count-selector count-selector-5">
+      <button class="count-btn" data-count="10" onclick="DR.selectCount(this)">10</button>
+      <button class="count-btn selected" data-count="20" onclick="DR.selectCount(this)">20</button>
+      <button class="count-btn" data-count="30" onclick="DR.selectCount(this)">30</button>
+      <button class="count-btn" data-count="40" onclick="DR.selectCount(this)">40</button>
+      <button class="count-btn" data-count="50" onclick="DR.selectCount(this)">50</button>
+    </div>
+    <div class="fg-section">
+      <button id="dr-fg-btn" class="count-btn fg-btn disabled" onclick="DR.selectFastGeschafft()">Fast geschafft</button>
+      <p id="dr-fg-info" class="fg-info">Noch keine Fehler gespeichert</p>
+    </div>
+    <p id="dr-start-count" class="start-count">20 Aufgaben</p>
+    <button class="start-btn" onclick="DR.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="dr-history-toggle" class="history-toggle" onclick="DR.toggleHistory()">Historie anzeigen</button>
+      <div id="dr-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== DURCH GAME ===== -->
+  <div id="dr-game-screen" class="screen hidden">
+    <header><h1>Durch</h1>
+      <div class="score-bar"><span id="dr-score-text">0 / 0</span>
+        <div class="progress-track"><div id="dr-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="dr-scene" class="scene-container"><img id="dr-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="dr-particles" class="particles"></div></div>
+    <div id="dr-question-area" class="question-area">
+      <p id="dr-prompt" class="prompt-text"></p>
+      <div class="math-display"><span id="dr-factor-a" class="factor"></span><span class="op">÷</span><span id="dr-factor-b" class="factor"></span><span class="eq">=</span><span id="dr-answer" class="answer-box">?</span></div>
+      <div class="numpad">
+        <button class="num-btn" onclick="DR.numpad('1')">1</button><button class="num-btn" onclick="DR.numpad('2')">2</button><button class="num-btn" onclick="DR.numpad('3')">3</button>
+        <button class="num-btn" onclick="DR.numpad('4')">4</button><button class="num-btn" onclick="DR.numpad('5')">5</button><button class="num-btn" onclick="DR.numpad('6')">6</button>
+        <button class="num-btn" onclick="DR.numpad('7')">7</button><button class="num-btn" onclick="DR.numpad('8')">8</button><button class="num-btn" onclick="DR.numpad('9')">9</button>
+        <button class="num-btn num-del" onclick="DR.numpad('del')">&#9003;</button><button class="num-btn" onclick="DR.numpad('0')">0</button><button class="num-btn num-ok" onclick="DR.numpad('ok')">OK</button>
+      </div>
+      <div id="dr-feedback" class="hidden"></div>
+    </div>
+    <div id="dr-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="dr-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="dr-break-fill" class="break-timer-fill"></div></div><span id="dr-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="DR.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="dr-end" class="end-screen hidden">
+      <h2 id="dr-end-title"></h2><p id="dr-end-msg"></p><div id="dr-end-stats"></div>
+      <button class="restart-btn" onclick="DR.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== PLUS START ===== -->
+  <div id="pl-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="pl-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Plus</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Wie viele Aufgaben?</p>
+    <div id="pl-count-selector" class="count-selector count-selector-5">
+      <button class="count-btn" data-count="10" onclick="PL.selectCount(this)">10</button>
+      <button class="count-btn selected" data-count="20" onclick="PL.selectCount(this)">20</button>
+      <button class="count-btn" data-count="30" onclick="PL.selectCount(this)">30</button>
+      <button class="count-btn" data-count="40" onclick="PL.selectCount(this)">40</button>
+      <button class="count-btn" data-count="50" onclick="PL.selectCount(this)">50</button>
+    </div>
+    <p class="selector-label">Zahlenbereich</p>
+    <div id="pl-range-selector" class="cat-selector">
+      <button class="count-btn selected" data-range="100" onclick="PL.selectRange(this)">bis 100</button>
+      <button class="count-btn" data-range="1000" onclick="PL.selectRange(this)">bis 1'000</button>
+    </div>
+    <div class="fg-section">
+      <button id="pl-fg-btn" class="count-btn fg-btn disabled" onclick="PL.selectFastGeschafft()">Fast geschafft</button>
+      <p id="pl-fg-info" class="fg-info">Noch keine Fehler gespeichert</p>
+    </div>
+    <p id="pl-start-count" class="start-count">20 Aufgaben im 100er Bereich</p>
+    <button class="start-btn" onclick="PL.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="pl-history-toggle" class="history-toggle" onclick="PL.toggleHistory()">Historie anzeigen</button>
+      <div id="pl-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== PLUS GAME ===== -->
+  <div id="pl-game-screen" class="screen hidden">
+    <header><h1>Plus</h1>
+      <div class="score-bar"><span id="pl-score-text">0 / 0</span>
+        <div class="progress-track"><div id="pl-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="pl-scene" class="scene-container"><img id="pl-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="pl-particles" class="particles"></div></div>
+    <div id="pl-question-area" class="question-area">
+      <p id="pl-prompt" class="prompt-text"></p>
+      <div class="math-display"><span id="pl-factor-a" class="factor"></span><span class="op">+</span><span id="pl-factor-b" class="factor"></span><span class="eq">=</span><span id="pl-answer" class="answer-box">?</span></div>
+      <div class="numpad">
+        <button class="num-btn" onclick="PL.numpad('1')">1</button><button class="num-btn" onclick="PL.numpad('2')">2</button><button class="num-btn" onclick="PL.numpad('3')">3</button>
+        <button class="num-btn" onclick="PL.numpad('4')">4</button><button class="num-btn" onclick="PL.numpad('5')">5</button><button class="num-btn" onclick="PL.numpad('6')">6</button>
+        <button class="num-btn" onclick="PL.numpad('7')">7</button><button class="num-btn" onclick="PL.numpad('8')">8</button><button class="num-btn" onclick="PL.numpad('9')">9</button>
+        <button class="num-btn num-del" onclick="PL.numpad('del')">&#9003;</button><button class="num-btn" onclick="PL.numpad('0')">0</button><button class="num-btn num-ok" onclick="PL.numpad('ok')">OK</button>
+      </div>
+      <div id="pl-feedback" class="hidden"></div>
+    </div>
+    <div id="pl-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="pl-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="pl-break-fill" class="break-timer-fill"></div></div><span id="pl-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="PL.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="pl-end" class="end-screen hidden">
+      <h2 id="pl-end-title"></h2><p id="pl-end-msg"></p><div id="pl-end-stats"></div>
+      <button class="restart-btn" onclick="PL.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== MINUS START ===== -->
+  <div id="mi-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="mi-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Minus</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Wie viele Aufgaben?</p>
+    <div id="mi-count-selector" class="count-selector count-selector-5">
+      <button class="count-btn" data-count="10" onclick="MI.selectCount(this)">10</button>
+      <button class="count-btn selected" data-count="20" onclick="MI.selectCount(this)">20</button>
+      <button class="count-btn" data-count="30" onclick="MI.selectCount(this)">30</button>
+      <button class="count-btn" data-count="40" onclick="MI.selectCount(this)">40</button>
+      <button class="count-btn" data-count="50" onclick="MI.selectCount(this)">50</button>
+    </div>
+    <p class="selector-label">Zahlenbereich</p>
+    <div id="mi-range-selector" class="cat-selector">
+      <button class="count-btn selected" data-range="100" onclick="MI.selectRange(this)">bis 100</button>
+      <button class="count-btn" data-range="1000" onclick="MI.selectRange(this)">bis 1'000</button>
+    </div>
+    <div class="fg-section">
+      <button id="mi-fg-btn" class="count-btn fg-btn disabled" onclick="MI.selectFastGeschafft()">Fast geschafft</button>
+      <p id="mi-fg-info" class="fg-info">Noch keine Fehler gespeichert</p>
+    </div>
+    <p id="mi-start-count" class="start-count">20 Aufgaben im 100er Bereich</p>
+    <button class="start-btn" onclick="MI.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="mi-history-toggle" class="history-toggle" onclick="MI.toggleHistory()">Historie anzeigen</button>
+      <div id="mi-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== MINUS GAME ===== -->
+  <div id="mi-game-screen" class="screen hidden">
+    <header><h1>Minus</h1>
+      <div class="score-bar"><span id="mi-score-text">0 / 0</span>
+        <div class="progress-track"><div id="mi-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="mi-scene" class="scene-container"><img id="mi-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="mi-particles" class="particles"></div></div>
+    <div id="mi-question-area" class="question-area">
+      <p id="mi-prompt" class="prompt-text"></p>
+      <div class="math-display"><span id="mi-factor-a" class="factor"></span><span class="op">−</span><span id="mi-factor-b" class="factor"></span><span class="eq">=</span><span id="mi-answer" class="answer-box">?</span></div>
+      <div class="numpad">
+        <button class="num-btn" onclick="MI.numpad('1')">1</button><button class="num-btn" onclick="MI.numpad('2')">2</button><button class="num-btn" onclick="MI.numpad('3')">3</button>
+        <button class="num-btn" onclick="MI.numpad('4')">4</button><button class="num-btn" onclick="MI.numpad('5')">5</button><button class="num-btn" onclick="MI.numpad('6')">6</button>
+        <button class="num-btn" onclick="MI.numpad('7')">7</button><button class="num-btn" onclick="MI.numpad('8')">8</button><button class="num-btn" onclick="MI.numpad('9')">9</button>
+        <button class="num-btn num-del" onclick="MI.numpad('del')">&#9003;</button><button class="num-btn" onclick="MI.numpad('0')">0</button><button class="num-btn num-ok" onclick="MI.numpad('ok')">OK</button>
+      </div>
+      <div id="mi-feedback" class="hidden"></div>
+    </div>
+    <div id="mi-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="mi-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="mi-break-fill" class="break-timer-fill"></div></div><span id="mi-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="MI.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="mi-end" class="end-screen hidden">
+      <h2 id="mi-end-title"></h2><p id="mi-end-msg"></p><div id="mi-end-stats"></div>
+      <button class="restart-btn" onclick="MI.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== RECHTSCHREIBUNG START ===== -->
+  <div id="rs-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="rs-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Rechtschreibung</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Was willst du üben?</p>
+    <div id="rs-cat-selector" class="cat-selector">
+      <button class="cat-btn selected" data-cat="tz_z" onclick="RS.toggleCat(this)">tz / z</button>
+      <button class="cat-btn selected" data-cat="ck_k" onclick="RS.toggleCat(this)">ck / k</button>
+    </div>
+    <p class="selector-label">Wie viele Wörter?</p>
+    <div class="count-selector">
+      <button class="count-btn" data-count="25" onclick="RS.selectCount(this)">25</button>
+      <button class="count-btn" data-count="50" onclick="RS.selectCount(this)">50</button>
+      <button class="count-btn" data-count="75" onclick="RS.selectCount(this)">75</button>
+      <button class="count-btn selected" data-count="100" onclick="RS.selectCount(this)">100</button>
+    </div>
+    <div class="fg-section">
+      <button id="rs-fg-btn" class="count-btn fg-btn disabled" onclick="RS.selectFastGeschafft()">Fast geschafft</button>
+      <p id="rs-fg-info" class="fg-info">Noch keine Fehler gespeichert</p>
+    </div>
+    <p id="rs-start-count" class="start-count"></p>
+    <button class="start-btn" onclick="RS.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="rs-history-toggle" class="history-toggle" onclick="RS.toggleHistory()">Historie anzeigen</button>
+      <div id="rs-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== RECHTSCHREIBUNG GAME ===== -->
+  <div id="rs-game-screen" class="screen hidden">
+    <header><h1>Rechtschreibung</h1>
+      <div class="score-bar"><span id="rs-score-text">0 / 0</span>
+        <div class="progress-track"><div id="rs-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="rs-scene" class="scene-container"><img id="rs-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="rs-particles" class="particles"></div></div>
+    <div id="rs-question-area" class="question-area">
+      <p id="rs-prompt" class="prompt-text"></p>
+      <div id="rs-word-buttons" class="word-buttons">
+        <button class="word-btn" id="rs-btn-a" onclick="RS.chooseWord('a')"></button>
+        <button class="word-btn" id="rs-btn-b" onclick="RS.chooseWord('b')"></button>
+      </div>
+      <div id="rs-feedback" class="hidden"></div>
+      <div id="rs-rule-box" class="hidden"></div>
+    </div>
+    <div id="rs-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="rs-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="rs-break-fill" class="break-timer-fill"></div></div><span id="rs-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="RS.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="rs-end" class="end-screen hidden">
+      <h2 id="rs-end-title"></h2><p id="rs-end-msg"></p><div id="rs-end-stats"></div>
+      <p class="eval-label">Bewertung pro Kategorie:</p><div id="rs-end-cats" class="cat-eval"></div>
+      <div class="end-legend"><span class="legend-item"><span class="legend-dot" style="background:#4CAF50"></span>Perfekt</span><span class="legend-item"><span class="legend-dot" style="background:#FDD835"></span>Mässig</span><span class="legend-item"><span class="legend-dot" style="background:#E53935"></span>Viele Fehler</span></div>
+      <button class="restart-btn" onclick="RS.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== WORLDS ===== -->
+  <div id="worlds-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="worlds-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Welt der Preise</h1>
+    <p class="worlds-sub">Wähle eine Landschaft und gestalte sie mit Stickern!</p>
+    <div class="worlds-grid">
+      <div class="world-card" onclick="APP.openWorld('forest')"><img src="images/world_forest.png" alt="Wald"><span>Wald</span></div>
+      <div class="world-card" onclick="APP.openWorld('ocean')"><img src="images/world_ocean.png" alt="Meer"><span>Meer</span></div>
+      <div class="world-card" onclick="APP.openWorld('farm')"><img src="images/world_farm.png" alt="Bauernhof"><span>Bauernhof</span></div>
+      <div class="world-card" onclick="APP.openWorld('mountain')"><img src="images/world_mountain.png" alt="Berge"><span>Berge</span></div>
+    </div>
+    <button class="home-btn home-btn-gold" onclick="APP.goTo('shop')" style="margin-top:12px">Sticker-Shop</button>
+  </div>
+
+  <!-- ===== WORLD VIEW ===== -->
+  <div id="world-view-screen" class="screen hidden">
+    <div id="world-topbar" class="world-topbar">
+      <button class="back-btn" onclick="APP.goTo('worlds')">Zurück</button>
+      <button class="shop-link" onclick="APP.goTo('shop')">Shop</button>
+    </div>
+    <div id="world-canvas">
+      <img id="world-bg" src="" alt="Landschaft" class="world-bg">
+      <div id="world-clouds" class="world-clouds">
+        <div class="cloud cloud1"></div><div class="cloud cloud2"></div><div class="cloud cloud3"></div>
+      </div>
+      <div id="world-stickers"></div>
+    </div>
+    <div id="world-inventory" class="world-inventory hidden">
+      <p class="inv-title">Sticker platzieren — tippe einen an:</p>
+      <div id="inv-grid" class="inv-grid"></div>
+      <button class="inv-close" onclick="APP.closeInventory()">Schliessen</button>
+    </div>
+    <button id="place-btn" class="place-btn" onclick="APP.openInventory()">Sticker platzieren</button>
+  </div>
+
+  <!-- ===== SHOP ===== -->
+  <div id="shop-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('worlds')">Zurück</button>
+      <div id="shop-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Sticker-Shop</h1>
+    <p id="shop-info" class="shop-info"></p>
+    <div id="shop-grid" class="shop-grid"></div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script src="game_einmaleins.js"></script>
+<script src="game_durch.js"></script>
+<script src="game_plus.js"></script>
+<script src="game_minus.js"></script>
+<script src="game_rechtschreibung.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Built output (too large for GitHub, use Release asset)
+MiaLou_Spielkiste.html
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Backup originals
+images/backup_originals/
