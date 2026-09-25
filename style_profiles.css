@@ -122,6 +122,13 @@
   width: 38px; height: 38px; border-radius: 10px; object-fit: contain;
   background: #f0ece3;
 }
+/* Das eigene Bild ist antippbar (führt zur Bildauswahl) */
+.home-profile-avatar-btn {
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border: 2px solid #e4dccf;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.home-profile-avatar-btn:active { transform: scale(0.92); border-color: #e8a960; }
 .home-profile-name {
   font-size: 16px; font-weight: 700; color: #5b4a3f; flex: 1; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -247,4 +254,8 @@
 @media (max-width: 380px) {
   .avatar-grid { grid-template-columns: repeat(4, 1fr); }
   .stats-tiles { grid-template-columns: repeat(2, 1fr); }
+  /* Drei Knöpfe plus Name werden sonst zu eng */
+  .home-profile-bar { gap: 6px; padding: 8px; }
+  .home-profile-name { font-size: 14px; }
+  .switch-btn { font-size: 12px; padding: 6px 8px; }
 }

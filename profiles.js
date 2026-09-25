@@ -317,6 +317,46 @@ var PROFILES = (function () {
     }
   }
 
+  // === Profilbild ändern (darf das Kind selbst) ===
+  // Ändert NUR das Bild — Punkte, Sticker und Statistiken bleiben unberührt,
+  // weil gezielt nur der Schlüssel 'avatar' geschrieben wird.
+  function setProfileAvatar(profileId, avatar, done) {
+    if (!profileId || !profileList[profileId]) { if (done) done(false, 'Profil nicht gefunden.'); return; }
+    if (AVATARS.indexOf(avatar) < 0) { if (done) done(false, 'Dieses Bild gibt es nicht.'); return; }
+
+    // Sofort lokal übernehmen, damit es auch ohne Cloud gleich sichtbar ist.
+    profileList[profileId].avatar = avatar;
+    cacheList();
+    renderProfileSelect();
+    if (profileId === (APP.getActiveProfileId && APP.getActiveProfileId())) {
+      if (APP.updateProfileHeader) APP.updateProfileHeader();
+    }
+
+    var ref = rootRef('profiles/' + profileId + '/avatar');
+    if (!ref) { if (done) done(true, ''); return; }
+
+    var finished = false;
+    function finish(ok, msg) {
+      if (finished) return;
+      finished = true;
+      if (done) done(ok, msg);
+    }
+    var timer = setTimeout(function () {
+      noteDbError('Profilbild speichern', { code: 'timeout', message: 'Keine Antwort nach 4 Sekunden.' });
+      finish(true, 'Gespeichert (bisher nur auf diesem Gerät).');
+    }, 4000);
+
+    ref.set(avatar, function (err) {
+      clearTimeout(timer);
+      if (err) {
+        noteDbError('Profilbild speichern', err);
+        finish(true, 'Gespeichert (bisher nur auf diesem Gerät).');
+      } else {
+        finish(true, '');
+      }
+    });
+  }
+
   // === Profil löschen (nur Eltern/Admin) ===
   function deleteProfile(profileId, done) {
     delete profileList[profileId];
@@ -635,8 +675,8 @@ var PROFILES = (function () {
     }
   }
 
-  function renderAvatarPicker() {
-    var grid = document.getElementById('np-avatars');
+  function renderAvatarPicker(gridId) {
+    var grid = document.getElementById(gridId || 'np-avatars');
     if (!grid) return;
     grid.innerHTML = '';
     for (var i = 0; i < AVATARS.length; i++) {
@@ -657,6 +697,31 @@ var PROFILES = (function () {
       if (opts[i].getAttribute('data-av') === av) opts[i].classList.add('selected');
       else opts[i].classList.remove('selected');
     }
+  }
+
+  // --- Mein Bild: das Kind wählt selbst sein Profilbild ---
+  // Kein Passwort nötig — es kann dabei nichts kaputtgehen, weil nur der
+  // Schlüssel 'avatar' geändert wird. Punkte und Sticker bleiben unberührt.
+  function openMyAvatar() {
+    var id = APP.getActiveProfileId ? APP.getActiveProfileId() : null;
+    if (!id || !profileList[id]) { backToProfileSelect(); return; }
+    pendingAvatar = profileList[id].avatar || AVATARS[0];
+    setMsg('ma-msg', '');
+    var title = document.getElementById('ma-title');
+    if (title) title.textContent = 'Mein Bild';
+    renderAvatarPicker('ma-avatars');
+    APP.goTo('my-avatar');
+  }
+
+  function saveMyAvatar() {
+    var id = APP.getActiveProfileId ? APP.getActiveProfileId() : null;
+    if (!id) { backToProfileSelect(); return; }
+    setProfileAvatar(id, pendingAvatar, function (ok, msg) {
+      if (!ok) { setMsg('ma-msg', msg || 'Konnte nicht gespeichert werden.'); return; }
+      setMsg('ma-msg', msg ? ('Gespeichert. ' + msg) : 'Gespeichert!', true);
+      // Kurz die Bestätigung zeigen, dann zurück zum Spielen.
+      setTimeout(function () { APP.goTo('home'); }, 900);
+    });
   }
 
   function submitNewProfile() {
@@ -904,6 +969,10 @@ var PROFILES = (function () {
     submitNewProfile: submitNewProfile,
     openParentArea: openParentArea,
     openParentAreaForActive: openParentAreaForActive,
+    // Profilbild durch das Kind selbst
+    openMyAvatar: openMyAvatar,
+    saveMyAvatar: saveMyAvatar,
+    setProfileAvatar: setProfileAvatar,
     submitParentLogin: submitParentLogin,
     openAdminLogin: openAdminLogin,
     submitAdminLogin: submitAdminLogin,

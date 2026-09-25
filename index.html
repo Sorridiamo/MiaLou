@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=15">
-  <link rel="stylesheet" href="style_profiles.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style_profiles.css?v=16">
 </head>
 <body>
 <div id="app">
@@ -44,6 +44,18 @@
     <p id="np-msg" class="form-msg"></p>
     <button class="start-btn" onclick="PROFILES.submitNewProfile()">Profil anlegen</button>
     <p class="form-hint">Das Eltern-Passwort ist am Anfang <strong>1234</strong> und kann im Elternbereich geändert werden.</p>
+  </div>
+
+  <!-- ===== MEIN BILD (Kind wählt selbst sein Profilbild) ===== -->
+  <div id="my-avatar-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+    </div>
+    <h1 id="ma-title" class="section-title">Mein Bild</h1>
+    <p class="profile-subtitle">Welches Bild möchtest du?</p>
+    <div id="ma-avatars" class="avatar-grid"></div>
+    <p id="ma-msg" class="form-msg"></p>
+    <button class="start-btn" onclick="PROFILES.saveMyAvatar()">Bild speichern</button>
   </div>
 
   <!-- ===== ELTERN-LOGIN ===== -->
@@ -139,8 +151,12 @@
   <!-- ===== HOME ===== -->
   <div id="home-screen" class="screen hidden">
     <div class="home-profile-bar">
-      <img id="home-profile-avatar" class="home-profile-avatar" src="" alt="">
+      <!-- Auf das eigene Bild tippen: Profilbild ändern (ohne Passwort) -->
+      <img id="home-profile-avatar" class="home-profile-avatar home-profile-avatar-btn"
+           src="" alt="Mein Bild ändern" title="Mein Bild ändern"
+           onclick="PROFILES.openMyAvatar()">
       <span id="home-profile-name" class="home-profile-name"></span>
+      <button class="switch-btn" onclick="PROFILES.openMyAvatar()">Mein Bild</button>
       <button class="switch-btn" onclick="PROFILES.openParentAreaForActive()">Eltern</button>
       <button class="switch-btn" onclick="PROFILES.backToProfileSelect()">Wechseln</button>
     </div>
@@ -538,15 +554,15 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=15"></script>
-<script src="app.js?v=15"></script>
-<script src="game_einmaleins.js?v=15"></script>
-<script src="game_durch.js?v=15"></script>
-<script src="game_plus.js?v=15"></script>
-<script src="game_minus.js?v=15"></script>
-<script src="game_rechtschreibung.js?v=15"></script>
-<script src="stats.js?v=15"></script>
-<script src="profiles.js?v=15"></script>
+<script src="firebase-config.js?v=16"></script>
+<script src="app.js?v=16"></script>
+<script src="game_einmaleins.js?v=16"></script>
+<script src="game_durch.js?v=16"></script>
+<script src="game_plus.js?v=16"></script>
+<script src="game_minus.js?v=16"></script>
+<script src="game_rechtschreibung.js?v=16"></script>
+<script src="stats.js?v=16"></script>
+<script src="profiles.js?v=16"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();
