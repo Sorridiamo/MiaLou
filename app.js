@@ -39,20 +39,28 @@ var APP = (function() {
   var PRIZE_COST = 25;
 
   // === LocalStorage keys (prefixed) — dienen als Offline-Cache ===
+  // Die Keys werden pro Profil erweitert (z.B. 'spielkiste_points__p1abc'),
+  // damit mehrere Kinder auf demselben Gerät sich nicht überschreiben.
   var KEY_POINTS = 'spielkiste_points';
   var KEY_OWNED = 'spielkiste_owned_stickers';
   var KEY_PLACED = 'spielkiste_placed_stickers';
 
   // === Cloud sync (Firebase Realtime Database) ===
-  // Solange es noch kein Profil-System gibt, nutzen alle Geräte ein
-  // gemeinsames "default"-Profil. Das Profil-System (Schritt 2) wird
-  // diesen Pfad später durch 'profiles/<profileId>' pro Kind ersetzen.
-  var PROFILE_ID = 'default';
+  // Jedes Kind hat seinen eigenen Zweig 'profiles/<profileId>'.
+  // PROFILE_ID wird von PROFILES.selectProfile() über switchProfile() gesetzt.
+  var PROFILE_ID = null;
   var dbRef = null;
+  var cloudListener = null;      // aktiver Firebase-Listener, damit wir ihn abmelden können
   var cloudReady = false;
   var suppressNextWrite = false; // verhindert Echo-Schreiben beim Empfang eines Cloud-Updates
 
+  // Profilbezogener localStorage-Key
+  function pk(base) {
+    return PROFILE_ID ? (base + '__' + PROFILE_ID) : base;
+  }
+
   function getDbRef() {
+    if (!PROFILE_ID) return null;
     if (dbRef) return dbRef;
     try {
       if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
@@ -62,6 +70,25 @@ var APP = (function() {
     } catch (e) { console.warn('Firebase Database nicht verfügbar:', e); }
     return null;
   }
+
+  // Wechselt das aktive Profil: alten Listener abmelden, lokalen Cache des
+  // neuen Kindes laden, dann mit dem Cloud-Zweig des Kindes verbinden.
+  function switchProfile(profileId) {
+    // Alten Listener abmelden, sonst schreiben zwei Profile durcheinander
+    if (cloudListener && dbRef) {
+      try { dbRef.off('value', cloudListener); } catch (e) {}
+    }
+    cloudListener = null;
+    dbRef = null;
+    cloudReady = false;
+
+    PROFILE_ID = profileId;
+    load();
+    updatePointsDisplays();
+    initCloudSync();
+  }
+
+  function getActiveProfileId() { return PROFILE_ID; }
 
   // === State ===
   var points = 0;
@@ -77,9 +104,9 @@ var APP = (function() {
   // === Load / Save ===
   function load() {
     try {
-      points = parseInt(localStorage.getItem(KEY_POINTS), 10) || 0;
-      ownedStickers = JSON.parse(localStorage.getItem(KEY_OWNED)) || [];
-      placedStickers = JSON.parse(localStorage.getItem(KEY_PLACED)) || {};
+      points = parseInt(localStorage.getItem(pk(KEY_POINTS)), 10) || 0;
+      ownedStickers = JSON.parse(localStorage.getItem(pk(KEY_OWNED))) || [];
+      placedStickers = JSON.parse(localStorage.getItem(pk(KEY_PLACED))) || {};
     } catch(e) {
       points = 0; ownedStickers = []; placedStickers = {};
     }
@@ -89,14 +116,13 @@ var APP = (function() {
   // zwischen allen Geräten, die dasselbe Profil nutzen.
   function initCloudSync() {
     var ref = getDbRef();
-    if (!ref) return; // kein Firebase verfügbar -> App läuft rein lokal weiter
+    if (!ref) return; // kein Firebase / kein Profil -> App läuft rein lokal weiter
 
-    ref.on('value', function(snapshot) {
+    cloudListener = ref.on('value', function(snapshot) {
       var data = snapshot.val();
 
       if (data === null) {
         // Noch keine Daten in der Cloud -> aktuellen lokalen Stand hochladen
-        // (z.B. beim allerersten Start auf diesem Profil / Migration)
         pushFullState();
         cloudReady = true;
         return;
@@ -110,9 +136,9 @@ var APP = (function() {
 
       // Lokalen Cache aktuell halten (für Offline-Start)
       try {
-        localStorage.setItem(KEY_POINTS, points);
-        localStorage.setItem(KEY_OWNED, JSON.stringify(ownedStickers));
-        localStorage.setItem(KEY_PLACED, JSON.stringify(placedStickers));
+        localStorage.setItem(pk(KEY_POINTS), points);
+        localStorage.setItem(pk(KEY_OWNED), JSON.stringify(ownedStickers));
+        localStorage.setItem(pk(KEY_PLACED), JSON.stringify(placedStickers));
       } catch(e) {}
 
       // Spieldaten (Historie + Fehlerlisten aller Spiele) in den lokalen
@@ -121,7 +147,7 @@ var APP = (function() {
         for (var gk in data.gameData) {
           if (!data.gameData.hasOwnProperty(gk)) continue;
           try {
-            localStorage.setItem(unsanitizeKey(gk), JSON.stringify(data.gameData[gk]));
+            localStorage.setItem(pk(unsanitizeKey(gk)), JSON.stringify(data.gameData[gk]));
           } catch(e) {}
         }
       }
@@ -166,7 +192,9 @@ var APP = (function() {
   function pushFullState() {
     var ref = getDbRef();
     if (!ref || suppressNextWrite) return;
-    ref.set({
+    // update() statt set(): überschreibt NICHT die Profil-Metadaten
+    // (name, avatar, parentPin) — wichtig für update-sichere Daten.
+    ref.update({
       points: points,
       ownedStickers: ownedStickers,
       placedStickers: placedStickers,
@@ -175,19 +203,19 @@ var APP = (function() {
   }
 
   function savePoints() {
-    try { localStorage.setItem(KEY_POINTS, points); } catch(e) {}
+    try { localStorage.setItem(pk(KEY_POINTS), points); } catch(e) {}
     var ref = getDbRef();
     if (ref && !suppressNextWrite) ref.child('points').set(points);
   }
 
   function saveOwned() {
-    try { localStorage.setItem(KEY_OWNED, JSON.stringify(ownedStickers)); } catch(e) {}
+    try { localStorage.setItem(pk(KEY_OWNED), JSON.stringify(ownedStickers)); } catch(e) {}
     var ref = getDbRef();
     if (ref && !suppressNextWrite) ref.child('ownedStickers').set(ownedStickers);
   }
 
   function savePlaced() {
-    try { localStorage.setItem(KEY_PLACED, JSON.stringify(placedStickers)); } catch(e) {}
+    try { localStorage.setItem(pk(KEY_PLACED), JSON.stringify(placedStickers)); } catch(e) {}
     var ref = getDbRef();
     if (ref && !suppressNextWrite) ref.child('placedStickers').set(placedStickers);
   }
@@ -215,14 +243,14 @@ var APP = (function() {
 
   function gameLoad(key, fallback) {
     try {
-      var raw = localStorage.getItem(key);
+      var raw = localStorage.getItem(pk(key));
       return raw ? JSON.parse(raw) : fallback;
     } catch(e) { return fallback; }
   }
 
   function gameSave(key, data) {
     // 1. Lokal speichern (sofort verfügbar, funktioniert offline)
-    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem(pk(key), JSON.stringify(data)); } catch(e) {}
     // 2. In die Cloud schreiben (geräteübergreifend, update-sicher)
     var ref = getDbRef();
     if (ref && !suppressNextWrite) {
@@ -273,6 +301,7 @@ var APP = (function() {
     if (el) el.classList.remove('hidden');
 
     updatePointsDisplays();
+    updateProfileHeader();
 
     // Screen-specific init
     if (screen === 'em-start') { EM.initStart(); }
@@ -282,7 +311,22 @@ var APP = (function() {
     if (screen === 'rs-start') { RS.initStart(); }
     if (screen === 'shop') { renderShop(); }
     if (screen === 'worlds') { /* nothing special */ }
+    if (screen === 'profile-select') { PROFILES.renderProfileSelect(); }
     window.scrollTo(0, 0);
+  }
+
+  // Zeigt oben auf dem Home-Screen, welches Kind gerade spielt
+  function updateProfileHeader() {
+    var nameEl = document.getElementById('home-profile-name');
+    var imgEl = document.getElementById('home-profile-avatar');
+    if (!nameEl && !imgEl) return;
+    var p = (typeof PROFILES !== 'undefined') ? PROFILES.getActiveProfile() : null;
+    if (nameEl) nameEl.textContent = p ? p.name : '';
+    if (imgEl && p) {
+      imgEl.src = (typeof resolveImg === 'function')
+        ? resolveImg('images/' + p.avatar + '.png')
+        : 'images/' + p.avatar + '.png';
+    }
   }
 
   // === SHOP ===
@@ -582,18 +626,41 @@ var APP = (function() {
   }
 
   // === INIT ===
-  load();          // sofort lokalen Cache laden (funktioniert auch offline)
+  // Die App startet immer auf dem Profil-Auswahlscreen. Erst wenn ein Kind
+  // gewählt ist, werden dessen Daten geladen (switchProfile).
+  function boot() {
+    // Profilliste aus der Cloud holen (bzw. aus dem lokalen Cache, falls offline)
+    PROFILES.initProfileList(function () {
+      var existing = PROFILES.getProfiles();
+      var count = Object.keys(existing).length;
+
+      if (count === 0) {
+        // Noch keine Profile: prüfen, ob Daten aus der Zeit vor dem
+        // Profil-System vorliegen und diese in ein echtes Profil überführen.
+        PROFILES.migrateDefaultProfile(function (migrated) {
+          if (migrated) console.log('Altes Profil wurde übernommen.');
+        });
+      }
+      PROFILES.renderProfileSelect();
+    });
+
+    goTo('profile-select');
+  }
 
   // Cloud-Sync erst starten, wenn die anonyme Firebase-Anmeldung durch ist.
   // Ohne Anmeldung greifen die Datenbank-Regeln ("auth != null") nicht und
   // die App läuft einfach rein lokal weiter.
-  if (typeof FB_READY === 'function') {
-    FB_READY(function (signedIn) {
-      if (signedIn) initCloudSync();
-      else console.warn('Kein Firebase-Login — App läuft nur mit localStorage.');
-    });
-  } else {
-    initCloudSync();
+  // boot() wird erst nach dem Laden aller Skripte aufgerufen, weil es
+  // PROFILES braucht (profiles.js wird nach app.js geladen).
+  function startWhenReady() {
+    if (typeof FB_READY === 'function') {
+      FB_READY(function (signedIn) {
+        if (!signedIn) console.warn('Kein Firebase-Login — App läuft nur mit localStorage.');
+        boot();
+      });
+    } else {
+      boot();
+    }
   }
 
   return {
@@ -604,6 +671,11 @@ var APP = (function() {
     addPoint: addPoint,
     getPoints: getPoints,
     updatePointsDisplays: updatePointsDisplays,
+    updateProfileHeader: updateProfileHeader,
+    // Profil-Anbindung
+    switchProfile: switchProfile,
+    getActiveProfileId: getActiveProfileId,
+    startWhenReady: startWhenReady,
     // Gemeinsame Speicher-API — von allen Spielen genutzt, cloud-synchron
     gameLoad: gameLoad,
     gameSave: gameSave,
@@ -612,5 +684,6 @@ var APP = (function() {
   };
 })();
 
-// Init home on load
+// Start: wird am Ende von index.html aufgerufen, wenn alle Module (inkl.
+// PROFILES und STATS) geladen sind.
 APP.updatePointsDisplays();

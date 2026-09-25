@@ -8,12 +8,134 @@
   <meta name="apple-mobile-web-app-title" content="Mia Lou">
   <title>Mia Lou's Spielkiste</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style_profiles.css">
 </head>
 <body>
 <div id="app">
 
+  <!-- ===== PROFIL-AUSWAHL (Startscreen) ===== -->
+  <div id="profile-select-screen" class="screen">
+    <h1 class="home-title">Mia Lou's Spielkiste</h1>
+    <p class="profile-subtitle">Wer spielt heute?</p>
+    <div id="profile-grid" class="profile-grid"></div>
+    <div class="profile-footer">
+      <button class="footer-btn" onclick="PROFILES.openParentArea()">Eltern</button>
+      <button class="footer-btn footer-btn-admin" onclick="PROFILES.openAdminLogin()">Admin</button>
+    </div>
+  </div>
+
+  <!-- ===== NEUES PROFIL ANLEGEN ===== -->
+  <div id="new-profile-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="PROFILES.cancelNewProfile()">Zurück</button>
+    </div>
+    <h1 class="section-title">Neues Profil</h1>
+    <label class="form-label" for="np-name">Name</label>
+    <input type="text" id="np-name" class="form-input" maxlength="20" placeholder="z.B. Mia Lou" autocomplete="off">
+    <p class="form-label">Profilbild wählen</p>
+    <div id="np-avatars" class="avatar-grid"></div>
+    <p id="np-msg" class="form-msg"></p>
+    <button class="start-btn" onclick="PROFILES.submitNewProfile()">Profil anlegen</button>
+    <p class="form-hint">Das Eltern-Passwort ist am Anfang <strong>1234</strong> und kann im Elternbereich geändert werden.</p>
+  </div>
+
+  <!-- ===== ELTERN-LOGIN ===== -->
+  <div id="parent-login-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="PROFILES.backToProfileSelect()">Zurück</button>
+    </div>
+    <h1 class="section-title">Elternbereich</h1>
+    <p class="form-label">Für welches Kind?</p>
+    <div id="pl-children" class="profile-grid profile-grid-sm"></div>
+    <label class="form-label" for="pl-pin">Passwort</label>
+    <input type="password" id="pl-pin" class="form-input" inputmode="numeric" autocomplete="off">
+    <p id="pl-msg" class="form-msg"></p>
+    <button class="start-btn" onclick="PROFILES.submitParentLogin()">Anmelden</button>
+    <div class="parent-newprofile">
+      <p class="form-hint">Ein neues Profil anlegen? Dafür brauchst du das Admin-Passwort.</p>
+      <button class="footer-btn" onclick="PROFILES.openAdminLogin()">Zum Admin-Bereich</button>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN-LOGIN ===== -->
+  <div id="admin-login-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="PROFILES.backToProfileSelect()">Zurück</button>
+    </div>
+    <h1 class="section-title">Admin</h1>
+    <label class="form-label" for="al-pin">Admin-Passwort</label>
+    <input type="password" id="al-pin" class="form-input" inputmode="numeric" autocomplete="off">
+    <p id="al-msg" class="form-msg"></p>
+    <button class="start-btn" onclick="PROFILES.submitAdminLogin()">Anmelden</button>
+    <p class="form-hint">Beim ersten Mal ist das Admin-Passwort <strong>0000</strong>. Bitte gleich ändern.</p>
+  </div>
+
+  <!-- ===== ADMIN-BEREICH ===== -->
+  <div id="admin-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="PROFILES.backToProfileSelect()">Zurück</button>
+    </div>
+    <h1 class="section-title">Admin</h1>
+    <button class="start-btn" onclick="PROFILES.openNewProfile()">Neues Profil anlegen</button>
+    <h3 class="stats-h">Alle Profile</h3>
+    <div id="admin-children" class="admin-list"></div>
+    <div class="admin-pin-box">
+      <label class="form-label" for="ad-new-pin">Admin-Passwort ändern</label>
+      <input type="password" id="ad-new-pin" class="form-input" inputmode="numeric" autocomplete="off" placeholder="Neues Passwort (min. 4 Zeichen)">
+      <p id="ad-pin-msg" class="form-msg"></p>
+      <button class="small-btn" onclick="PROFILES.submitAdminPinChange()">Passwort speichern</button>
+    </div>
+  </div>
+
+  <!-- ===== ELTERN-DASHBOARD ===== -->
+  <div id="parent-dashboard-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="PROFILES.backToProfileSelect()">Zurück</button>
+    </div>
+    <div class="pd-head">
+      <img id="pd-avatar" class="pd-avatar" src="" alt="">
+      <h1 id="pd-title" class="section-title">Elternbereich</h1>
+    </div>
+
+    <div class="pd-box">
+      <h3 class="stats-h">Punkte schenken</h3>
+      <div class="pd-gift-row">
+        <input type="number" id="pd-gift-amount" class="form-input form-input-sm" min="1" inputmode="numeric" placeholder="Anzahl Punkte">
+        <button class="small-btn" onclick="PROFILES.submitGift()">Schenken</button>
+      </div>
+      <p id="pd-gift-msg" class="form-msg"></p>
+      <p class="form-hint">25 Punkte = 1 Sticker im Shop.</p>
+    </div>
+
+    <div class="pd-box">
+      <h3 class="stats-h">Passwort ändern</h3>
+      <input type="password" id="pd-new-pin" class="form-input" inputmode="numeric" autocomplete="off" placeholder="Neues Passwort (min. 4 Zeichen)">
+      <p id="pd-pin-msg" class="form-msg"></p>
+      <button class="small-btn" onclick="PROFILES.submitNewPin()">Passwort speichern</button>
+    </div>
+
+    <div class="pd-box">
+      <h3 class="stats-h">Weiteres Kind</h3>
+      <p class="form-hint">Ein zusätzliches Profil anlegen — z.B. für ein Geschwisterkind.</p>
+      <button class="small-btn" onclick="PROFILES.openNewProfile()">Neues Profil anlegen</button>
+    </div>
+
+    <div id="pd-stats" class="pd-stats"></div>
+
+    <div id="pd-delete-wrap" class="pd-box hidden">
+      <h3 class="stats-h">Profil löschen</h3>
+      <p class="form-hint">Alle Punkte, Sticker und Statistiken dieses Kindes werden gelöscht.</p>
+      <button class="small-btn small-btn-danger" onclick="PROFILES.deleteFromDashboard()">Profil löschen</button>
+    </div>
+  </div>
+
   <!-- ===== HOME ===== -->
-  <div id="home-screen" class="screen">
+  <div id="home-screen" class="screen hidden">
+    <div class="home-profile-bar">
+      <img id="home-profile-avatar" class="home-profile-avatar" src="" alt="">
+      <span id="home-profile-name" class="home-profile-name"></span>
+      <button class="switch-btn" onclick="PROFILES.backToProfileSelect()">Wechseln</button>
+    </div>
     <h1 class="home-title">Mia Lou's Spielkiste</h1>
     <div class="home-hero-wrap"><img id="home-hero" src="images/start_hero.png" alt="Maus"></div>
     <div id="home-points" class="points-bar"></div>
@@ -415,5 +537,11 @@
 <script src="game_plus.js"></script>
 <script src="game_minus.js"></script>
 <script src="game_rechtschreibung.js"></script>
+<script src="stats.js"></script>
+<script src="profiles.js"></script>
+<script>
+  /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
+  APP.startWhenReady();
+</script>
 </body>
 </html>

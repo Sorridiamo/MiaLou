@@ -24,6 +24,7 @@ def main():
     # Read source files
     html = read_file(os.path.join(BASE_DIR, 'index.html'))
     css = read_file(os.path.join(BASE_DIR, 'style.css'))
+    css_profiles = read_file(os.path.join(BASE_DIR, 'style_profiles.css'))
     fb_config_js = read_file(os.path.join(BASE_DIR, 'firebase-config.js'))
     app_js = read_file(os.path.join(BASE_DIR, 'app.js'))
     em_js = read_file(os.path.join(BASE_DIR, 'game_einmaleins.js'))
@@ -31,9 +32,11 @@ def main():
     pl_js = read_file(os.path.join(BASE_DIR, 'game_plus.js'))
     mi_js = read_file(os.path.join(BASE_DIR, 'game_minus.js'))
     rs_js = read_file(os.path.join(BASE_DIR, 'game_rechtschreibung.js'))
+    stats_js = read_file(os.path.join(BASE_DIR, 'stats.js'))
+    profiles_js = read_file(os.path.join(BASE_DIR, 'profiles.js'))
 
     # Collect all image references
-    all_js = app_js + em_js + dr_js + pl_js + mi_js + rs_js
+    all_js = app_js + em_js + dr_js + pl_js + mi_js + rs_js + stats_js + profiles_js
     img_refs = set()
 
     # Find in HTML: src="images/..."
@@ -77,6 +80,8 @@ def main():
         pl_js = pl_js.replace(f"'{ref}'", f"'{b64}'")
         mi_js = mi_js.replace(f"'{ref}'", f"'{b64}'")
         rs_js = rs_js.replace(f"'{ref}'", f"'{b64}'")
+        stats_js = stats_js.replace(f"'{ref}'", f"'{b64}'")
+        profiles_js = profiles_js.replace(f"'{ref}'", f"'{b64}'")
 
     # Also handle dynamically constructed paths like 'images/sticker_' + sid + '.png'
     # We inject a lookup map into app.js
@@ -93,7 +98,19 @@ def main():
         if ref in b64_map:
             world_map_entries.append(f"  '{ref}': '{b64_map[ref]}'")
 
-    img_map_js = "var IMG_MAP = {\n" + ",\n".join(sticker_map_entries + world_map_entries) + "\n};\n"
+    # Profilbilder (avatar_01.png … avatar_30.png) werden in profiles.js
+    # dynamisch zusammengesetzt und brauchen daher auch einen IMG_MAP-Eintrag.
+    avatar_map_entries = []
+    for af in sorted(os.listdir(IMG_DIR)):
+        if af.startswith('avatar_') and af.endswith('.png'):
+            ref = 'images/' + af
+            if ref in b64_map:
+                avatar_map_entries.append(f"  '{ref}': '{b64_map[ref]}'")
+    print(f'  Profilbilder in IMG_MAP: {len(avatar_map_entries)}')
+
+    img_map_js = "var IMG_MAP = {\n" + ",\n".join(
+        sticker_map_entries + world_map_entries + avatar_map_entries
+    ) + "\n};\n"
     img_map_js += """
 function resolveImg(path) {
   return IMG_MAP[path] || path;
@@ -111,19 +128,26 @@ function resolveImg(path) {
         "resolveImg('images/world_' + worldId + '.png')"
     )
 
-    # Inline CSS
+    # Inline CSS (beide Stylesheets)
     html = html.replace(
-        '<link rel="stylesheet" href="style.css">',
-        f'<style>\n{css}\n</style>'
+        '<link rel="stylesheet" href="style.css">\n  <link rel="stylesheet" href="style_profiles.css">',
+        f'<style>\n{css}\n{css_profiles}\n</style>'
     )
 
     # Inline JS (replace script tags)
     # Firebase CDN-Skripte bleiben als externe <script src> erhalten (kein lokales File, kein Base64 nötig).
-    # firebase-config.js und die Spiel-Skripte werden wie bisher direkt inline gebaut.
+    # firebase-config.js und alle App-/Spiel-Skripte werden inline gebaut.
     html = html.replace(
-        '<script src="firebase-config.js"></script>\n<script src="app.js"></script>\n<script src="game_einmaleins.js"></script>\n<script src="game_durch.js"></script>\n<script src="game_plus.js"></script>\n<script src="game_minus.js"></script>\n<script src="game_rechtschreibung.js"></script>',
-        f'<script>\n{img_map_js}\n{fb_config_js}\n{app_js}\n{em_js}\n{dr_js}\n{pl_js}\n{mi_js}\n{rs_js}\n</script>'
+        '<script src="firebase-config.js"></script>\n<script src="app.js"></script>\n<script src="game_einmaleins.js"></script>\n<script src="game_durch.js"></script>\n<script src="game_plus.js"></script>\n<script src="game_minus.js"></script>\n<script src="game_rechtschreibung.js"></script>\n<script src="stats.js"></script>\n<script src="profiles.js"></script>',
+        f'<script>\n{img_map_js}\n{fb_config_js}\n{app_js}\n{em_js}\n{dr_js}\n{pl_js}\n{mi_js}\n{rs_js}\n{stats_js}\n{profiles_js}\n</script>'
     )
+
+    # Sicherheitsnetz: falls ein Replace nicht gegriffen hat, sofort abbrechen,
+    # statt eine kaputte Datei zu schreiben.
+    for leftover in ['href="style.css"', 'src="app.js"', 'src="profiles.js"', 'src="stats.js"']:
+        if leftover in html:
+            print(f'FEHLER: {leftover} wurde nicht ersetzt — Build abgebrochen.')
+            sys.exit(1)
 
     # Write output
     with open(OUT_FILE, 'w', encoding='utf-8') as f:
