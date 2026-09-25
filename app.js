@@ -583,7 +583,18 @@ var APP = (function() {
 
   // === INIT ===
   load();          // sofort lokalen Cache laden (funktioniert auch offline)
-  initCloudSync(); // danach mit der Cloud verbinden und live synchron halten
+
+  // Cloud-Sync erst starten, wenn die anonyme Firebase-Anmeldung durch ist.
+  // Ohne Anmeldung greifen die Datenbank-Regeln ("auth != null") nicht und
+  // die App läuft einfach rein lokal weiter.
+  if (typeof FB_READY === 'function') {
+    FB_READY(function (signedIn) {
+      if (signedIn) initCloudSync();
+      else console.warn('Kein Firebase-Login — App läuft nur mit localStorage.');
+    });
+  } else {
+    initCloudSync();
+  }
 
   return {
     goTo: goTo,
