@@ -24,6 +24,7 @@ def main():
     # Read source files
     html = read_file(os.path.join(BASE_DIR, 'index.html'))
     css = read_file(os.path.join(BASE_DIR, 'style.css'))
+    fb_config_js = read_file(os.path.join(BASE_DIR, 'firebase-config.js'))
     app_js = read_file(os.path.join(BASE_DIR, 'app.js'))
     em_js = read_file(os.path.join(BASE_DIR, 'game_einmaleins.js'))
     dr_js = read_file(os.path.join(BASE_DIR, 'game_durch.js'))
@@ -117,9 +118,11 @@ function resolveImg(path) {
     )
 
     # Inline JS (replace script tags)
+    # Firebase CDN-Skripte bleiben als externe <script src> erhalten (kein lokales File, kein Base64 nötig).
+    # firebase-config.js und die Spiel-Skripte werden wie bisher direkt inline gebaut.
     html = html.replace(
-        '<script src="app.js"></script>\n<script src="game_einmaleins.js"></script>\n<script src="game_durch.js"></script>\n<script src="game_plus.js"></script>\n<script src="game_minus.js"></script>\n<script src="game_rechtschreibung.js"></script>',
-        f'<script>\n{img_map_js}\n{app_js}\n{em_js}\n{dr_js}\n{pl_js}\n{mi_js}\n{rs_js}\n</script>'
+        '<script src="firebase-config.js"></script>\n<script src="app.js"></script>\n<script src="game_einmaleins.js"></script>\n<script src="game_durch.js"></script>\n<script src="game_plus.js"></script>\n<script src="game_minus.js"></script>\n<script src="game_rechtschreibung.js"></script>',
+        f'<script>\n{img_map_js}\n{fb_config_js}\n{app_js}\n{em_js}\n{dr_js}\n{pl_js}\n{mi_js}\n{rs_js}\n</script>'
     )
 
     # Write output

@@ -261,8 +261,8 @@ var RS = (function() {
   var feedback, promptText, ruleBox, breakScreen, breakImage, breakTimer, breakTimerFill;
   var btnA, btnB;
 
-  function loadS(k,f){try{var r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
-  function saveS(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch(e){}}
+  function loadS(k,f){return APP.gameLoad(k,f);}
+  function saveS(k,d){APP.gameSave(k,d);}
   function shuffleArray(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
   function formatTime(s){var m=Math.floor(s/60),r=Math.round(s%60);return m===0?r+'s':m+'min '+r+'s';}
 

@@ -38,10 +38,30 @@ var APP = (function() {
   var WORLD_NAMES = { forest:'Wald', ocean:'Meer', farm:'Bauernhof', mountain:'Berge' };
   var PRIZE_COST = 25;
 
-  // === LocalStorage keys (prefixed) ===
+  // === LocalStorage keys (prefixed) — dienen als Offline-Cache ===
   var KEY_POINTS = 'spielkiste_points';
   var KEY_OWNED = 'spielkiste_owned_stickers';
   var KEY_PLACED = 'spielkiste_placed_stickers';
+
+  // === Cloud sync (Firebase Realtime Database) ===
+  // Solange es noch kein Profil-System gibt, nutzen alle Geräte ein
+  // gemeinsames "default"-Profil. Das Profil-System (Schritt 2) wird
+  // diesen Pfad später durch 'profiles/<profileId>' pro Kind ersetzen.
+  var PROFILE_ID = 'default';
+  var dbRef = null;
+  var cloudReady = false;
+  var suppressNextWrite = false; // verhindert Echo-Schreiben beim Empfang eines Cloud-Updates
+
+  function getDbRef() {
+    if (dbRef) return dbRef;
+    try {
+      if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+        dbRef = firebase.database().ref('profiles/' + PROFILE_ID);
+        return dbRef;
+      }
+    } catch (e) { console.warn('Firebase Database nicht verfügbar:', e); }
+    return null;
+  }
 
   // === State ===
   var points = 0;
@@ -65,16 +85,149 @@ var APP = (function() {
     }
   }
 
+  // Verbindet sich mit der Cloud-Datenbank und hält den State live synchron
+  // zwischen allen Geräten, die dasselbe Profil nutzen.
+  function initCloudSync() {
+    var ref = getDbRef();
+    if (!ref) return; // kein Firebase verfügbar -> App läuft rein lokal weiter
+
+    ref.on('value', function(snapshot) {
+      var data = snapshot.val();
+
+      if (data === null) {
+        // Noch keine Daten in der Cloud -> aktuellen lokalen Stand hochladen
+        // (z.B. beim allerersten Start auf diesem Profil / Migration)
+        pushFullState();
+        cloudReady = true;
+        return;
+      }
+
+      suppressNextWrite = true;
+      points = typeof data.points === 'number' ? data.points : 0;
+      ownedStickers = Array.isArray(data.ownedStickers) ? data.ownedStickers : [];
+      placedStickers = data.placedStickers || {};
+      suppressNextWrite = false;
+
+      // Lokalen Cache aktuell halten (für Offline-Start)
+      try {
+        localStorage.setItem(KEY_POINTS, points);
+        localStorage.setItem(KEY_OWNED, JSON.stringify(ownedStickers));
+        localStorage.setItem(KEY_PLACED, JSON.stringify(placedStickers));
+      } catch(e) {}
+
+      // Spieldaten (Historie + Fehlerlisten aller Spiele) in den lokalen
+      // Cache spiegeln, damit die Spiele sie synchron auslesen können.
+      if (data.gameData) {
+        for (var gk in data.gameData) {
+          if (!data.gameData.hasOwnProperty(gk)) continue;
+          try {
+            localStorage.setItem(unsanitizeKey(gk), JSON.stringify(data.gameData[gk]));
+          } catch(e) {}
+        }
+      }
+
+      cloudReady = true;
+      updatePointsDisplays();
+      // Falls gerade die Welt-Ansicht offen ist, Sticker neu zeichnen
+      var worldScreen = document.getElementById('world-view-screen');
+      if (worldScreen && !worldScreen.classList.contains('hidden')) {
+        renderPlacedStickers();
+      }
+      var shopScreen = document.getElementById('shop-screen');
+      if (shopScreen && !shopScreen.classList.contains('hidden')) {
+        renderShop();
+      }
+    }, function(err) {
+      console.warn('Firebase Sync-Fehler:', err);
+    });
+  }
+
+  // Alle Storage-Keys, die Spieldaten enthalten (Historie + Fehlerlisten).
+  // Bei einem neuen Spiel hier die neuen Keys ergänzen — dann werden sie
+  // bei einer Erst-Migration automatisch mit hochgeladen.
+  var GAME_DATA_KEYS = [
+    'einmaleins_errors', 'einmaleins_history',
+    'durch_errors', 'durch_history',
+    'plus_errors', 'plus_history',
+    'minus_errors', 'minus_history',
+    'rechtschreibung_errors', 'rechtschreibung_history'
+  ];
+
+  function collectGameData() {
+    var out = {};
+    for (var i = 0; i < GAME_DATA_KEYS.length; i++) {
+      var k = GAME_DATA_KEYS[i];
+      var val = gameLoad(k, null);
+      if (val !== null) out[sanitizeKey(k)] = val;
+    }
+    return out;
+  }
+
+  function pushFullState() {
+    var ref = getDbRef();
+    if (!ref || suppressNextWrite) return;
+    ref.set({
+      points: points,
+      ownedStickers: ownedStickers,
+      placedStickers: placedStickers,
+      gameData: collectGameData()
+    });
+  }
+
   function savePoints() {
     try { localStorage.setItem(KEY_POINTS, points); } catch(e) {}
+    var ref = getDbRef();
+    if (ref && !suppressNextWrite) ref.child('points').set(points);
   }
 
   function saveOwned() {
     try { localStorage.setItem(KEY_OWNED, JSON.stringify(ownedStickers)); } catch(e) {}
+    var ref = getDbRef();
+    if (ref && !suppressNextWrite) ref.child('ownedStickers').set(ownedStickers);
   }
 
   function savePlaced() {
     try { localStorage.setItem(KEY_PLACED, JSON.stringify(placedStickers)); } catch(e) {}
+    var ref = getDbRef();
+    if (ref && !suppressNextWrite) ref.child('placedStickers').set(placedStickers);
+  }
+
+  // =====================================================================
+  // === GEMEINSAME SPEICHER-API FÜR ALLE SPIELE =========================
+  // =====================================================================
+  // Jedes Spiel (auch zukünftige!) speichert seine Historie und Fehlerliste
+  // über gameLoad()/gameSave() statt direkt über localStorage. Damit landen
+  // diese Daten automatisch in der Cloud und sind auf allen Geräten da.
+  //
+  // WICHTIG für zukünftige Updates: Ein neues Spiel bekommt einfach neue
+  // Keys (z.B. 'geo_history'). Bestehende Keys NIE umbenennen oder löschen —
+  // dann bleiben alle alten Daten bei jedem Update erhalten.
+
+  // Firebase erlaubt in Schlüsseln kein  . $ # [ ] /  — daher umkodieren.
+  function sanitizeKey(key) {
+    return String(key).replace(/[.$#\[\]\/]/g, '_');
+  }
+  // Rückrichtung: unsere Keys enthalten selbst nie Sonderzeichen,
+  // daher ist die Umkehrung identisch.
+  function unsanitizeKey(key) {
+    return key;
+  }
+
+  function gameLoad(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch(e) { return fallback; }
+  }
+
+  function gameSave(key, data) {
+    // 1. Lokal speichern (sofort verfügbar, funktioniert offline)
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    // 2. In die Cloud schreiben (geräteübergreifend, update-sicher)
+    var ref = getDbRef();
+    if (ref && !suppressNextWrite) {
+      ref.child('gameData').child(sanitizeKey(key)).set(data);
+    }
   }
 
   // === Points ===
@@ -429,7 +582,8 @@ var APP = (function() {
   }
 
   // === INIT ===
-  load();
+  load();          // sofort lokalen Cache laden (funktioniert auch offline)
+  initCloudSync(); // danach mit der Cloud verbinden und live synchron halten
 
   return {
     goTo: goTo,
@@ -439,6 +593,9 @@ var APP = (function() {
     addPoint: addPoint,
     getPoints: getPoints,
     updatePointsDisplays: updatePointsDisplays,
+    // Gemeinsame Speicher-API — von allen Spielen genutzt, cloud-synchron
+    gameLoad: gameLoad,
+    gameSave: gameSave,
     STICKER_IDS: STICKER_IDS,
     STICKER_NAMES: STICKER_NAMES
   };

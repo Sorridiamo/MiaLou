@@ -37,8 +37,8 @@ var MI = (function() {
   var breakScreen, breakImage, breakTimer, breakTimerFill;
 
   // === Storage ===
-  function loadS(key, fb) { try { var r = localStorage.getItem(key); return r ? JSON.parse(r) : fb; } catch(e) { return fb; } }
-  function saveS(key, d) { try { localStorage.setItem(key, JSON.stringify(d)); } catch(e) {} }
+  function loadS(key, fb) { return APP.gameLoad(key, fb); }
+  function saveS(key, d) { APP.gameSave(key, d); }
 
   function shuffleArray(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function formatTime(s) { var m = Math.floor(s / 60), r = Math.round(s % 60); return m === 0 ? r + 's' : m + 'min ' + r + 's'; }
