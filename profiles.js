@@ -67,6 +67,25 @@ var PROFILES = (function () {
     return null;
   }
 
+  // Diagnose: Lesefehler der Datenbank festhalten, damit sie in der App
+  // sichtbar werden. Ohne das sieht man nur "geht nicht" ohne Grund.
+  function noteDbError(where, err) {
+    if (typeof FB_DIAG === 'undefined') return;
+    FB_DIAG.status = 'Datenbank-Zugriff verweigert';
+    FB_DIAG.code = (err && err.code) || 'db-error';
+    FB_DIAG.detail = where + ': ' + ((err && err.message) || String(err));
+    console.warn('Datenbank-Fehler bei ' + where + ':', err);
+  }
+
+  // Kurzer Verbindungsstatus als Text (für den Startscreen)
+  function diagText() {
+    if (typeof FB_DIAG === 'undefined') return '';
+    if (FB_DIAG.status === 'angemeldet') return 'Cloud verbunden';
+    var t = 'Cloud: ' + FB_DIAG.status;
+    if (FB_DIAG.code) t += ' (' + FB_DIAG.code + ')';
+    return t;
+  }
+
   function newProfileId() {
     // Zeitbasiert + Zufall: eindeutig, gültig als Firebase-Key
     return 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
@@ -158,8 +177,9 @@ var PROFILES = (function () {
       renderProfileSelect();
       if (callback) { callback(); callback = null; }
     }, function (err) {
-      console.warn('Profilliste konnte nicht geladen werden:', err);
+      noteDbError('Profilliste lesen', err);
       listReady = true;
+      renderProfileSelect();
       if (callback) { callback(); callback = null; }
     });
   }
@@ -230,6 +250,34 @@ var PROFILES = (function () {
   }
 
   // === Passwort prüfen ===
+  // Schutz gegen ein Hängenbleiben: liefert die Cloud innerhalb von 4 Sekunden
+  // weder Antwort noch Fehler, wird automatisch lokal geprüft. Der Wrapper
+  // stellt zusätzlich sicher, dass "done" garantiert nur einmal läuft.
+  function guardedPinCheck(ref, cacheKey, pin, onValue, done) {
+    var finished = false;
+    function finish(ok, msg) {
+      if (finished) return;
+      finished = true;
+      if (done) done(ok, msg);
+    }
+    var timer = setTimeout(function () {
+      if (finished) return;
+      noteDbError('Passwort lesen', { code: 'timeout', message: 'Keine Antwort nach 4 Sekunden.' });
+      checkPinOffline(cacheKey, pin, finish);
+    }, 4000);
+
+    ref.once('value', function (snap) {
+      clearTimeout(timer);
+      if (finished) return;
+      onValue(snap, finish);
+    }, function (err) {
+      clearTimeout(timer);
+      if (finished) return;
+      noteDbError('Passwort lesen', err);
+      checkPinOffline(cacheKey, pin, finish);
+    });
+  }
+
   function checkParentPin(profileId, pin, done) {
     var cacheKey = 'parent_' + profileId;
     var ref = rootRef('profiles/' + profileId + '/parentPin');
@@ -237,22 +285,19 @@ var PROFILES = (function () {
       checkPinOffline(cacheKey, pin, done);
       return;
     }
-    ref.once('value', function (snap) {
+    guardedPinCheck(ref, cacheKey, pin, function (snap, finish) {
       var stored = snap.val();
       if (!stored) {
         // Noch kein Passwort gesetzt (z.B. migriertes Altprofil) -> Standard
         var ok = (pin === DEFAULT_PARENT_PIN) || (hashPin(pin) === getPinCacheEntry(cacheKey));
         if (ok) savePinCacheEntry(cacheKey, hashPin(pin === DEFAULT_PARENT_PIN ? DEFAULT_PARENT_PIN : pin));
-        if (done) done(ok, ok ? '' : 'Falsches Passwort.');
+        finish(ok, ok ? '' : 'Falsches Passwort.');
         return;
       }
       var match = (hashPin(pin) === stored);
       if (match) savePinCacheEntry(cacheKey, stored);
-      if (done) done(match, match ? '' : 'Falsches Passwort.');
-    }, function () {
-      // Cloud-Lesezugriff fehlgeschlagen -> lokaler Fallback statt Blockade
-      checkPinOffline(cacheKey, pin, done);
-    });
+      finish(match, match ? '' : 'Falsches Passwort.');
+    }, done);
   }
 
   // Fallback, wenn die Cloud nicht erreichbar ist: gegen den lokalen Cache
@@ -292,7 +337,7 @@ var PROFILES = (function () {
       checkPinOffline(cacheKey, pin, done);
       return;
     }
-    ref.once('value', function (snap) {
+    guardedPinCheck(ref, cacheKey, pin, function (snap, finish) {
       var stored = snap.val();
       if (!stored) {
         // Erster Start: Admin-Passwort existiert noch nicht -> Standard setzen
@@ -300,16 +345,14 @@ var PROFILES = (function () {
           var h = hashPin(DEFAULT_ADMIN_PIN);
           ref.set(h);
           savePinCacheEntry(cacheKey, h);
-          if (done) done(true, '');
-        } else if (done) { done(false, 'Falsches Passwort.'); }
+          finish(true, '');
+        } else { finish(false, 'Falsches Passwort.'); }
         return;
       }
       var ok = (hashPin(pin) === stored);
       if (ok) savePinCacheEntry(cacheKey, stored);
-      if (done) done(ok, ok ? '' : 'Falsches Passwort.');
-    }, function () {
-      checkPinOffline(cacheKey, pin, done);
-    });
+      finish(ok, ok ? '' : 'Falsches Passwort.');
+    }, done);
   }
 
   function setAdminPin(newPin, done) {
@@ -404,6 +447,49 @@ var PROFILES = (function () {
       card.innerHTML = '<img src="' + avatarSrc(p.avatar) + '" alt=""><span>' + escapeHtml(p.name) + '</span>';
       card.onclick = (function (pid) { return function () { selectProfile(pid); }; })(id);
       grid.appendChild(card);
+    }
+
+    renderVersionLine();
+  }
+
+  // Kleine Zeile unten am Startscreen: Version + Cloud-Status.
+  // Zweck: sofort erkennen, ob der Browser die neue Fassung geladen hat und
+  // ob die Cloud-Verbindung steht — ohne Browser-Konsole.
+  var diagTimer = null;
+  function renderVersionLine() {
+    var el = document.getElementById('version-line');
+    if (!el) return;
+    var v = (typeof APP_VERSION !== 'undefined') ? APP_VERSION : '?';
+    var d = diagText();
+    el.textContent = v + (d ? ' · ' + d : '');
+    el.className = 'version-line' +
+      (d === 'Cloud verbunden' ? ' version-ok' : (d ? ' version-bad' : ''));
+    el.onclick = function () {
+      if (typeof FB_DIAG === 'undefined') return;
+      alert('Version: ' + v +
+            '\nStatus: ' + FB_DIAG.status +
+            '\nCode: ' + (FB_DIAG.code || '—') +
+            '\nDetail: ' + (FB_DIAG.detail || '—'));
+    };
+
+    // Der Cloud-Status trifft erst ein paar Sekunden später ein (Anmeldung
+    // läuft asynchron). Darum die Zeile kurz nachziehen, bis der Status steht.
+    if (!diagTimer) {
+      var ticks = 0;
+      diagTimer = setInterval(function () {
+        ticks++;
+        var t = diagText();
+        if (ticks > 12 || t === 'Cloud verbunden') {
+          clearInterval(diagTimer);
+          diagTimer = null;
+        }
+        var e2 = document.getElementById('version-line');
+        if (e2) {
+          e2.textContent = v + (t ? ' · ' + t : '');
+          e2.className = 'version-line' +
+            (t === 'Cloud verbunden' ? ' version-ok' : (t ? ' version-bad' : ''));
+        }
+      }, 1000);
     }
   }
 

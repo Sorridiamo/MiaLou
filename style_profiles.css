@@ -51,6 +51,15 @@
 .footer-btn:active { transform: scale(0.96); background: #f0ece3; }
 .footer-btn-admin { border-color: #d8c4b0; color: #8a7565; }
 
+/* Version + Cloud-Status: klein unten am Startscreen. Antippen zeigt Details. */
+.version-line {
+  font-size: 11px; color: #a09080; margin-top: 12px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.version-line.version-ok { color: #7aa88a; }
+.version-line.version-bad { color: #c08a70; }
+
+
 /* --- Profilbild-Auswahl --- */
 .avatar-grid {
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
