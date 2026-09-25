@@ -3,6 +3,11 @@
    ============================================================ */
 
 /* --- Profil-Auswahl --- */
+.startscreen-banner {
+  width: 100%; max-width: 440px; aspect-ratio: 2 / 1;
+  object-fit: cover; border-radius: 22px; margin-bottom: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
 .profile-subtitle { font-size: 18px; font-weight: 600; color: #7a6b5d; }
 
 .profile-grid {
