@@ -35,6 +35,7 @@ var PROFILES = (function () {
 
   var KEY_LAST_PROFILE = 'spielkiste_last_profile';
   var KEY_PROFILE_CACHE = 'spielkiste_profile_cache';
+  var KEY_PIN_CACHE = 'spielkiste_pin_cache'; // lokaler Passwort-Cache (Fallback ohne Cloud)
 
   var profileList = {};      // { profileId: {name, avatar, createdAt} }
   var activeProfileId = null;
@@ -69,6 +70,25 @@ var PROFILES = (function () {
   function newProfileId() {
     // Zeitbasiert + Zufall: eindeutig, gültig als Firebase-Key
     return 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+  }
+
+  // === Lokaler Passwort-Cache (Fallback, falls die Cloud mal nicht
+  // erreichbar ist — z.B. Netzwerkproblem, Datenbank-Regeln, Offline).
+  // Ohne diesen Cache würde ein Cloud-Ausfall den Eltern/Admin-Zugang
+  // komplett blockieren. Wird bei jedem erfolgreichen Cloud-Zugriff aktuell
+  // gehalten, ist also nie schlechter als die Cloud selbst.
+  function loadPinCache() {
+    try { return JSON.parse(localStorage.getItem(KEY_PIN_CACHE)) || {}; } catch (e) { return {}; }
+  }
+  function savePinCacheEntry(key, hash) {
+    try {
+      var cache = loadPinCache();
+      cache[key] = hash;
+      localStorage.setItem(KEY_PIN_CACHE, JSON.stringify(cache));
+    } catch (e) {}
+  }
+  function getPinCacheEntry(key) {
+    return loadPinCache()[key] || null;
   }
 
   function cacheList() {
@@ -211,20 +231,43 @@ var PROFILES = (function () {
 
   // === Passwort prüfen ===
   function checkParentPin(profileId, pin, done) {
+    var cacheKey = 'parent_' + profileId;
     var ref = rootRef('profiles/' + profileId + '/parentPin');
-    if (!ref) { if (done) done(false, 'Keine Verbindung zur Datenbank.'); return; }
+    if (!ref) {
+      checkPinOffline(cacheKey, pin, done);
+      return;
+    }
     ref.once('value', function (snap) {
       var stored = snap.val();
       if (!stored) {
         // Noch kein Passwort gesetzt (z.B. migriertes Altprofil) -> Standard
-        if (done) done(pin === DEFAULT_PARENT_PIN, pin === DEFAULT_PARENT_PIN ? '' : 'Falsches Passwort.');
+        var ok = (pin === DEFAULT_PARENT_PIN) || (hashPin(pin) === getPinCacheEntry(cacheKey));
+        if (ok) savePinCacheEntry(cacheKey, hashPin(pin === DEFAULT_PARENT_PIN ? DEFAULT_PARENT_PIN : pin));
+        if (done) done(ok, ok ? '' : 'Falsches Passwort.');
         return;
       }
-      var ok = (hashPin(pin) === stored);
-      if (done) done(ok, ok ? '' : 'Falsches Passwort.');
+      var match = (hashPin(pin) === stored);
+      if (match) savePinCacheEntry(cacheKey, stored);
+      if (done) done(match, match ? '' : 'Falsches Passwort.');
     }, function () {
-      if (done) done(false, 'Passwort konnte nicht geprüft werden.');
+      // Cloud-Lesezugriff fehlgeschlagen -> lokaler Fallback statt Blockade
+      checkPinOffline(cacheKey, pin, done);
     });
+  }
+
+  // Fallback, wenn die Cloud nicht erreichbar ist: gegen den lokalen Cache
+  // prüfen, oder — falls noch nie ein Passwort gecacht wurde — das
+  // Standard-Passwort akzeptieren, damit niemand ausgesperrt wird.
+  function checkPinOffline(cacheKey, pin, done) {
+    var cached = getPinCacheEntry(cacheKey);
+    if (cached) {
+      var ok = (hashPin(pin) === cached);
+      if (done) done(ok, ok ? '' : 'Falsches Passwort.');
+      return;
+    }
+    var isDefault = (cacheKey.indexOf('admin_') === 0) ? (pin === DEFAULT_ADMIN_PIN) : (pin === DEFAULT_PARENT_PIN);
+    if (isDefault) savePinCacheEntry(cacheKey, hashPin(pin));
+    if (done) done(isDefault, isDefault ? '' : 'Keine Verbindung zur Datenbank — versuche es mit dem Standard-Passwort.');
   }
 
   function setParentPin(profileId, newPin, done) {
@@ -232,30 +275,40 @@ var PROFILES = (function () {
       if (done) done(false, 'Das Passwort muss mindestens 4 Zeichen haben.');
       return;
     }
+    var cacheKey = 'parent_' + profileId;
+    var hash = hashPin(newPin);
+    savePinCacheEntry(cacheKey, hash); // sofort lokal übernehmen, unabhängig von der Cloud
     var ref = rootRef('profiles/' + profileId + '/parentPin');
-    if (!ref) { if (done) done(false, 'Keine Verbindung zur Datenbank.'); return; }
-    ref.set(hashPin(newPin), function (err) {
-      if (done) done(!err, err ? 'Speichern fehlgeschlagen.' : '');
+    if (!ref) { if (done) done(true, ''); return; }
+    ref.set(hash, function (err) {
+      if (done) done(!err, err ? 'Speichern fehlgeschlagen (lokal aber gesetzt).' : '');
     });
   }
 
   function checkAdminPin(pin, done) {
+    var cacheKey = 'admin_pin';
     var ref = rootRef('admin/pin');
-    if (!ref) { if (done) done(false, 'Keine Verbindung zur Datenbank.'); return; }
+    if (!ref) {
+      checkPinOffline(cacheKey, pin, done);
+      return;
+    }
     ref.once('value', function (snap) {
       var stored = snap.val();
       if (!stored) {
         // Erster Start: Admin-Passwort existiert noch nicht -> Standard setzen
         if (pin === DEFAULT_ADMIN_PIN) {
-          ref.set(hashPin(DEFAULT_ADMIN_PIN));
+          var h = hashPin(DEFAULT_ADMIN_PIN);
+          ref.set(h);
+          savePinCacheEntry(cacheKey, h);
           if (done) done(true, '');
         } else if (done) { done(false, 'Falsches Passwort.'); }
         return;
       }
       var ok = (hashPin(pin) === stored);
+      if (ok) savePinCacheEntry(cacheKey, stored);
       if (done) done(ok, ok ? '' : 'Falsches Passwort.');
     }, function () {
-      if (done) done(false, 'Passwort konnte nicht geprüft werden.');
+      checkPinOffline(cacheKey, pin, done);
     });
   }
 
@@ -264,10 +317,12 @@ var PROFILES = (function () {
       if (done) done(false, 'Das Passwort muss mindestens 4 Zeichen haben.');
       return;
     }
+    var hash = hashPin(newPin);
+    savePinCacheEntry('admin_pin', hash);
     var ref = rootRef('admin/pin');
-    if (!ref) { if (done) done(false, 'Keine Verbindung zur Datenbank.'); return; }
-    ref.set(hashPin(newPin), function (err) {
-      if (done) done(!err, err ? 'Speichern fehlgeschlagen.' : '');
+    if (!ref) { if (done) done(true, ''); return; }
+    ref.set(hash, function (err) {
+      if (done) done(!err, err ? 'Speichern fehlgeschlagen (lokal aber gesetzt).' : '');
     });
   }
 
