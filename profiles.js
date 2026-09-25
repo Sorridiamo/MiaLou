@@ -82,6 +82,33 @@ var PROFILES = (function () {
     } catch (e) { profileList = {}; }
   }
 
+  // === Elternbereich direkt für das aktive Kind öffnen ===
+  // Wird von der Kinderseite (Home) aus aufgerufen. Das Kind ist damit schon
+  // bekannt, also blenden wir die Kind-Auswahl aus und fragen nur das Passwort.
+  function openParentAreaForActive() {
+    isAdmin = false;
+    var activeId = APP.getActiveProfileId ? APP.getActiveProfileId() : null;
+    parentContextId = activeId;
+    setMsg('pl-msg', '');
+    renderParentChildPicker();
+    APP.goTo('parent-login');
+  }
+
+  // === Erstes Profil sicherstellen ===
+  // Neues, leeres Firebase-Projekt hat keine Profile und kein Alt-Profil zum
+  // Migrieren. Damit der Startscreen nie leer ist, legen wir dann Mia Lou an.
+  function ensureFirstProfile(done) {
+    var count = Object.keys(profileList).length;
+    if (count > 0) { if (done) done(false); return; }
+    migrateDefaultProfile(function (migrated) {
+      if (migrated) { if (done) done(true); return; }
+      // Kein Alt-Profil vorhanden -> Mia Lou anlegen
+      createProfile('Mia Lou', AVATARS[0], DEFAULT_PARENT_PIN, function () {
+        if (done) done(true);
+      });
+    });
+  }
+
   // === Profilliste laden ===
   function initProfileList(callback) {
     loadCachedList();
@@ -614,11 +641,13 @@ var PROFILES = (function () {
     selectProfile: selectProfile,
     renderProfileSelect: renderProfileSelect,
     migrateDefaultProfile: migrateDefaultProfile,
+    ensureFirstProfile: ensureFirstProfile,
     // UI-Handler (aus index.html aufgerufen)
     openNewProfile: openNewProfile,
     cancelNewProfile: cancelNewProfile,
     submitNewProfile: submitNewProfile,
     openParentArea: openParentArea,
+    openParentAreaForActive: openParentAreaForActive,
     submitParentLogin: submitParentLogin,
     openAdminLogin: openAdminLogin,
     submitAdminLogin: submitAdminLogin,

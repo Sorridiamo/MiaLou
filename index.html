@@ -20,7 +20,7 @@
     <p class="profile-subtitle">Wer spielt heute?</p>
     <div id="profile-grid" class="profile-grid"></div>
     <div class="profile-footer">
-      <button class="footer-btn" onclick="PROFILES.openParentArea()">Eltern</button>
+      <button class="footer-btn" onclick="PROFILES.openNewProfile()">Neues Kind</button>
       <button class="footer-btn footer-btn-admin" onclick="PROFILES.openAdminLogin()">Admin</button>
     </div>
   </div>
@@ -135,6 +135,7 @@
     <div class="home-profile-bar">
       <img id="home-profile-avatar" class="home-profile-avatar" src="" alt="">
       <span id="home-profile-name" class="home-profile-name"></span>
+      <button class="switch-btn" onclick="PROFILES.openParentAreaForActive()">Eltern</button>
       <button class="switch-btn" onclick="PROFILES.backToProfileSelect()">Wechseln</button>
     </div>
     <h1 class="home-title">Mia Lou's Spielkiste</h1>

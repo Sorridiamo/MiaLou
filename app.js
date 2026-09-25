@@ -631,17 +631,11 @@ var APP = (function() {
   function boot() {
     // Profilliste aus der Cloud holen (bzw. aus dem lokalen Cache, falls offline)
     PROFILES.initProfileList(function () {
-      var existing = PROFILES.getProfiles();
-      var count = Object.keys(existing).length;
-
-      if (count === 0) {
-        // Noch keine Profile: prüfen, ob Daten aus der Zeit vor dem
-        // Profil-System vorliegen und diese in ein echtes Profil überführen.
-        PROFILES.migrateDefaultProfile(function (migrated) {
-          if (migrated) console.log('Altes Profil wurde übernommen.');
-        });
-      }
-      PROFILES.renderProfileSelect();
+      // Sorgt dafür, dass immer mindestens ein Profil da ist (Mia Lou),
+      // egal ob die Cloud leer ist oder ein Alt-Profil migriert werden kann.
+      PROFILES.ensureFirstProfile(function () {
+        PROFILES.renderProfileSelect();
+      });
     });
 
     goTo('profile-select');
