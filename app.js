@@ -176,7 +176,8 @@ var APP = (function() {
     'durch_errors', 'durch_history',
     'plus_errors', 'plus_history',
     'minus_errors', 'minus_history',
-    'rechtschreibung_errors', 'rechtschreibung_history'
+    'rechtschreibung_errors', 'rechtschreibung_history',
+    'english_errors', 'english_history'
   ];
 
   function collectGameData() {
@@ -284,7 +285,7 @@ var APP = (function() {
     } else {
       txt += ' — noch ' + toNext + ' bis zum nächsten Preis';
     }
-    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','worlds-points','shop-points'];
+    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','worlds-points','shop-points'];
     for (var i = 0; i < ids.length; i++) {
       var el = document.getElementById(ids[i]);
       if (el) el.textContent = txt;
@@ -329,6 +330,8 @@ var APP = (function() {
     if (screen === 'pl-start') { PL.initStart(); }
     if (screen === 'mi-start') { MI.initStart(); }
     if (screen === 'rs-start') { RS.initStart(); }
+    if (screen === 'en-start') { EN.initStart(); }
+    if (screen === 'en-words') { EN.initWords(); }
     if (screen === 'shop') { renderShop(); }
     if (screen === 'worlds') { /* nothing special */ }
     if (screen === 'profile-select') { PROFILES.renderProfileSelect(); }

@@ -2,6 +2,33 @@
    PROFIL-SYSTEM — Startscreen, Eltern, Admin, Statistiken
    ============================================================ */
 
+/* === ENGLISCH === */
+/* Die Modus-Knöpfe sind länger als "tz / z" — daher umbrechend statt starr. */
+.en-mode-selector { flex-wrap: wrap; justify-content: center; }
+.en-mode-selector .cat-btn { font-size: 14px; padding: 8px 12px; }
+
+/* Das gefragte Wort gross und ruhig über den Antworten */
+.en-prompt-word {
+  font-size: 30px; font-weight: 700; color: #5b4a3f;
+  margin: 4px 0 14px; text-align: center; line-height: 1.25;
+}
+
+/* Drei Antworten untereinander — Sätze brauchen die ganze Breite */
+.en-options { flex-direction: column; gap: 10px; }
+.en-option-btn {
+  width: 100%; font-size: 18px; line-height: 1.3;
+  padding: 14px 12px; text-transform: none; white-space: normal;
+}
+
+/* Modus "Selbst schreiben" */
+.en-type-wrap { display: flex; flex-direction: column; gap: 10px; align-items: stretch; width: 100%; }
+.en-type-input { font-size: 22px; text-align: center; }
+.en-type-input.en-type-ok { border-color: #7ec88b; background: #f2fbf4; }
+.en-type-input.en-type-bad { border-color: #e08080; background: #fdf3f1; }
+
+/* Beispielsatz in der Wörterliste kleiner und ruhiger */
+.enw-sentence { font-size: 13px; color: #8a7a6c; font-style: italic; }
+
 /* --- Profil-Auswahl --- */
 .startscreen-banner {
   width: 100%; max-width: 440px; aspect-ratio: 2 / 1;

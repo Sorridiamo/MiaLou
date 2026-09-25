@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=16">
-  <link rel="stylesheet" href="style_profiles.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style_profiles.css?v=17">
 </head>
 <body>
 <div id="app">
@@ -134,6 +134,12 @@
     </div>
 
     <div class="pd-box">
+      <h3 class="stats-h">Englisch-Wörter verwalten</h3>
+      <p class="form-hint">Eigene Wörter hinzufügen oder Wörter ausblenden. Gilt für alle Kinder.</p>
+      <button class="small-btn" onclick="APP.goTo('en-words')">Wörter verwalten</button>
+    </div>
+
+    <div class="pd-box">
       <h3 class="stats-h">Weiteres Kind</h3>
       <p class="form-hint">Ein zusätzliches Profil anlegen — z.B. für ein Geschwisterkind.</p>
       <button class="small-btn" onclick="PROFILES.openNewProfile()">Neues Profil anlegen</button>
@@ -169,6 +175,7 @@
       <button class="home-btn home-btn-teal" onclick="APP.goTo('pl-start')">Plus</button>
       <button class="home-btn home-btn-orange" onclick="APP.goTo('mi-start')">Minus</button>
       <button class="home-btn home-btn-blue" onclick="APP.goTo('rs-start')">Rechtschreibung</button>
+      <button class="home-btn home-btn-red" onclick="APP.goTo('en-start')">Englisch</button>
       <button class="home-btn home-btn-gold" onclick="APP.goTo('worlds')">Welt der Preise</button>
     </div>
   </div>
@@ -499,6 +506,98 @@
     </div>
   </div>
 
+  <!-- ===== ENGLISCH START ===== -->
+  <div id="en-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="en-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Englisch</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Welche Übung?</p>
+    <div id="en-mode-selector" class="cat-selector en-mode-selector">
+      <button class="cat-btn selected" data-mode="mix" onclick="EN.selectMode(this)">Gemischt</button>
+      <button class="cat-btn" data-mode="spell" onclick="EN.selectMode(this)">Richtig geschrieben?</button>
+      <button class="cat-btn" data-mode="mean" onclick="EN.selectMode(this)">Was heisst das?</button>
+      <button class="cat-btn" data-mode="type" onclick="EN.selectMode(this)">Selbst schreiben</button>
+      <button class="cat-btn" data-mode="sent" onclick="EN.selectMode(this)">Welcher Satz?</button>
+    </div>
+    <p id="en-mode-hint" class="form-hint">Alle vier Übungen gemischt.</p>
+    <p class="selector-label">Wie viele Aufgaben?</p>
+    <div id="en-count-selector" class="count-selector">
+      <button class="count-btn" data-count="10" onclick="EN.selectCount(this)">10</button>
+      <button class="count-btn selected" data-count="20" onclick="EN.selectCount(this)">20</button>
+      <button class="count-btn" data-count="30" onclick="EN.selectCount(this)">30</button>
+      <button class="count-btn" data-count="50" onclick="EN.selectCount(this)">50</button>
+    </div>
+    <p id="en-start-count" class="start-count"></p>
+    <button class="start-btn" onclick="EN.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="en-history-toggle" class="history-toggle" onclick="EN.toggleHistory()">Historie anzeigen</button>
+      <div id="en-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== ENGLISCH GAME ===== -->
+  <div id="en-game-screen" class="screen hidden">
+    <header><h1>Englisch</h1>
+      <div class="score-bar"><span id="en-score-text">0 / 0</span>
+        <div class="progress-track"><div id="en-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="en-scene" class="scene-container"><img id="en-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="en-particles" class="particles"></div></div>
+    <div id="en-question-area" class="question-area">
+      <p id="en-prompt-label" class="prompt-text"></p>
+      <p id="en-prompt" class="en-prompt-word"></p>
+      <div id="en-options" class="word-buttons en-options"></div>
+      <div id="en-type-wrap" class="en-type-wrap hidden">
+        <input type="text" id="en-type-input" class="form-input en-type-input" autocomplete="off"
+               autocapitalize="off" autocorrect="off" spellcheck="false"
+               placeholder="englisches Wort" onkeydown="return EN.typeKey(event)">
+        <button class="small-btn" onclick="EN.submitTyped()">Prüfen</button>
+      </div>
+      <div id="en-feedback" class="hidden"></div>
+      <div id="en-explain-box" class="hidden"></div>
+    </div>
+    <div id="en-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="en-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="en-break-fill" class="break-timer-fill"></div></div><span id="en-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="EN.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="en-end" class="end-screen hidden">
+      <h2 id="en-end-title"></h2><p id="en-end-msg"></p><div id="en-end-stats"></div>
+      <p class="eval-label">Bewertung pro Übung:</p><div id="en-end-cats" class="cat-eval"></div>
+      <div class="end-legend"><span class="legend-item"><span class="legend-dot" style="background:#4CAF50"></span>Perfekt</span><span class="legend-item"><span class="legend-dot" style="background:#FDD835"></span>Mässig</span><span class="legend-item"><span class="legend-dot" style="background:#E53935"></span>Viele Fehler</span></div>
+      <button class="restart-btn" onclick="EN.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== ENGLISCH: WÖRTER VERWALTEN (Elternbereich) ===== -->
+  <div id="en-words-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('parent-dashboard')">Zurück</button>
+    </div>
+    <h1 class="section-title">Englisch-Wörter</h1>
+    <div class="pd-box">
+      <h3 class="stats-h">Neues Wort hinzufügen</h3>
+      <label class="form-label" for="enw-de">Deutsch</label>
+      <input type="text" id="enw-de" class="form-input" autocomplete="off" placeholder="z.B. riechen">
+      <label class="form-label" for="enw-en">Englisch</label>
+      <input type="text" id="enw-en" class="form-input" autocomplete="off"
+             autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="z.B. smell">
+      <label class="form-label" for="enw-sentence">Beispielsatz auf Englisch (optional)</label>
+      <input type="text" id="enw-sentence" class="form-input" autocomplete="off"
+             autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="z.B. Dogs smell everything.">
+      <p id="enw-msg" class="form-msg"></p>
+      <button class="small-btn" onclick="EN.addWord()">Wort hinzufügen</button>
+      <p class="form-hint">Die falschen Schreibweisen erzeugt die App automatisch. Ohne Beispielsatz kommt das Wort in der Übung "Welcher Satz?" nicht vor.</p>
+    </div>
+    <div id="enw-list" class="admin-list"></div>
+  </div>
+
   <!-- ===== WORLDS ===== -->
   <div id="worlds-screen" class="screen hidden">
     <div class="game-topbar">
@@ -554,15 +653,16 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=16"></script>
-<script src="app.js?v=16"></script>
-<script src="game_einmaleins.js?v=16"></script>
-<script src="game_durch.js?v=16"></script>
-<script src="game_plus.js?v=16"></script>
-<script src="game_minus.js?v=16"></script>
-<script src="game_rechtschreibung.js?v=16"></script>
-<script src="stats.js?v=16"></script>
-<script src="profiles.js?v=16"></script>
+<script src="firebase-config.js?v=17"></script>
+<script src="app.js?v=17"></script>
+<script src="game_einmaleins.js?v=17"></script>
+<script src="game_durch.js?v=17"></script>
+<script src="game_plus.js?v=17"></script>
+<script src="game_minus.js?v=17"></script>
+<script src="game_rechtschreibung.js?v=17"></script>
+<script src="game_english.js?v=17"></script>
+<script src="stats.js?v=17"></script>
+<script src="profiles.js?v=17"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();

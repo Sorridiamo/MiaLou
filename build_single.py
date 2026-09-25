@@ -32,11 +32,12 @@ def main():
     pl_js = read_file(os.path.join(BASE_DIR, 'game_plus.js'))
     mi_js = read_file(os.path.join(BASE_DIR, 'game_minus.js'))
     rs_js = read_file(os.path.join(BASE_DIR, 'game_rechtschreibung.js'))
+    en_js = read_file(os.path.join(BASE_DIR, 'game_english.js'))
     stats_js = read_file(os.path.join(BASE_DIR, 'stats.js'))
     profiles_js = read_file(os.path.join(BASE_DIR, 'profiles.js'))
 
     # Collect all image references
-    all_js = app_js + em_js + dr_js + pl_js + mi_js + rs_js + stats_js + profiles_js
+    all_js = app_js + em_js + dr_js + pl_js + mi_js + rs_js + en_js + stats_js + profiles_js
     img_refs = set()
 
     # Find in HTML: src="images/..."
@@ -80,6 +81,7 @@ def main():
         pl_js = pl_js.replace(f"'{ref}'", f"'{b64}'")
         mi_js = mi_js.replace(f"'{ref}'", f"'{b64}'")
         rs_js = rs_js.replace(f"'{ref}'", f"'{b64}'")
+        en_js = en_js.replace(f"'{ref}'", f"'{b64}'")
         stats_js = stats_js.replace(f"'{ref}'", f"'{b64}'")
         profiles_js = profiles_js.replace(f"'{ref}'", f"'{b64}'")
 
@@ -142,13 +144,14 @@ function resolveImg(path) {
     # Firebase CDN-Skripte bleiben als externe <script src> erhalten (kein lokales File, kein Base64 nötig).
     # firebase-config.js und alle App-/Spiel-Skripte werden inline gebaut.
     html = html.replace(
-        '<script src="firebase-config.js"></script>\n<script src="app.js"></script>\n<script src="game_einmaleins.js"></script>\n<script src="game_durch.js"></script>\n<script src="game_plus.js"></script>\n<script src="game_minus.js"></script>\n<script src="game_rechtschreibung.js"></script>\n<script src="stats.js"></script>\n<script src="profiles.js"></script>',
-        f'<script>\n{img_map_js}\n{fb_config_js}\n{app_js}\n{em_js}\n{dr_js}\n{pl_js}\n{mi_js}\n{rs_js}\n{stats_js}\n{profiles_js}\n</script>'
+        '<script src="firebase-config.js"></script>\n<script src="app.js"></script>\n<script src="game_einmaleins.js"></script>\n<script src="game_durch.js"></script>\n<script src="game_plus.js"></script>\n<script src="game_minus.js"></script>\n<script src="game_rechtschreibung.js"></script>\n<script src="game_english.js"></script>\n<script src="stats.js"></script>\n<script src="profiles.js"></script>',
+        f'<script>\n{img_map_js}\n{fb_config_js}\n{app_js}\n{em_js}\n{dr_js}\n{pl_js}\n{mi_js}\n{rs_js}\n{en_js}\n{stats_js}\n{profiles_js}\n</script>'
     )
 
     # Sicherheitsnetz: falls ein Replace nicht gegriffen hat, sofort abbrechen,
     # statt eine kaputte Datei zu schreiben.
-    for leftover in ['href="style.css"', 'src="app.js"', 'src="profiles.js"', 'src="stats.js"']:
+    for leftover in ['href="style.css"', 'src="app.js"', 'src="profiles.js"', 'src="stats.js"',
+                     'src="game_english.js"']:
         if leftover in html:
             print(f'FEHLER: {leftover} wurde nicht ersetzt — Build abgebrochen.')
             sys.exit(1)

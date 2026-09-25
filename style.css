@@ -43,6 +43,7 @@ body {
 .home-btn-orange { background: linear-gradient(135deg, #f5b880, #e88050); }
 .home-btn-blue { background: linear-gradient(135deg, #a8d4e6, #6baed6); }
 .home-btn-gold { background: linear-gradient(135deg, #f5d98e, #e8a960); }
+.home-btn-red { background: linear-gradient(135deg, #f0a8a8, #d86b6b); }
 
 /* === TOPBAR === */
 .game-topbar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 440px; gap: 8px; }
