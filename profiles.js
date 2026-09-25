@@ -86,6 +86,87 @@ var PROFILES = (function () {
     return t;
   }
 
+  // === Cloud-Selbsttest ===
+  // Prüft der Reihe nach: SDK geladen? angemeldet? lesen erlaubt? schreiben
+  // erlaubt? Und liefert in Klartext, welcher Schritt scheitert. Damit muss
+  // niemand mehr die Browser-Konsole öffnen.
+  function cloudSelfTest(done) {
+    var lines = [];
+    function add(s) { lines.push(s); }
+    function finish() { if (done) done(lines.join('\n')); }
+
+    add('Version: ' + ((typeof APP_VERSION !== 'undefined') ? APP_VERSION : '?'));
+
+    if (typeof firebase === 'undefined') {
+      add('1. Firebase-SDK: NICHT geladen (kein Internet?)');
+      finish(); return;
+    }
+    add('1. Firebase-SDK: geladen');
+
+    var user = null;
+    try { user = firebase.auth().currentUser; } catch (e) {}
+    if (!user) {
+      add('2. Anmeldung: FEHLT');
+      add('   Grund: ' + ((typeof FB_DIAG !== 'undefined' ? FB_DIAG.detail : '') || 'unbekannt'));
+      add('   Code: ' + ((typeof FB_DIAG !== 'undefined' ? FB_DIAG.code : '') || '—'));
+      finish(); return;
+    }
+    add('2. Anmeldung: OK (anonym)');
+
+    var readRef = rootRef('profiles');
+    if (!readRef) { add('3. Lesen: keine Datenbank-Verbindung'); finish(); return; }
+
+    var readDone = false;
+    var readTimer = setTimeout(function () {
+      if (readDone) return; readDone = true;
+      add('3. Lesen: KEINE ANTWORT (Zeitüberschreitung)');
+      add('   Prüfen: ist die Datenbank-Adresse richtig?');
+      finish();
+    }, 5000);
+
+    readRef.once('value', function (snap) {
+      if (readDone) return; readDone = true;
+      clearTimeout(readTimer);
+      var n = 0; snap.forEach(function () { n++; });
+      add('3. Lesen: OK (' + n + ' Profile in der Cloud)');
+      testWrite();
+    }, function (err) {
+      if (readDone) return; readDone = true;
+      clearTimeout(readTimer);
+      add('3. Lesen: VERWEIGERT');
+      add('   Code: ' + ((err && err.code) || '—'));
+      add('   Meldung: ' + ((err && err.message) || '—'));
+      add('   Prüfen: Datenbank-Regeln (Realtime Database -> Regeln)');
+      finish();
+    });
+
+    function testWrite() {
+      var wRef = rootRef('diag/lastCheck');
+      if (!wRef) { add('4. Schreiben: keine Verbindung'); finish(); return; }
+      var wDone = false;
+      var wTimer = setTimeout(function () {
+        if (wDone) return; wDone = true;
+        add('4. Schreiben: KEINE ANTWORT (Zeitueberschreitung)');
+        finish();
+      }, 5000);
+      wRef.set(Date.now(), function (err) {
+        if (wDone) return; wDone = true;
+        clearTimeout(wTimer);
+        if (err) {
+          add('4. Schreiben: VERWEIGERT');
+          add('   Code: ' + (err.code || '—'));
+          add('   Meldung: ' + (err.message || '—'));
+          add('   Prüfen: Datenbank-Regeln auf Schreibrechte');
+        } else {
+          add('4. Schreiben: OK');
+          add('');
+          add('Alles in Ordnung — die Cloud funktioniert.');
+        }
+        finish();
+      });
+    }
+  }
+
   function newProfileId() {
     // Zeitbasiert + Zufall: eindeutig, gültig als Firebase-Key
     return 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
@@ -491,14 +572,16 @@ var PROFILES = (function () {
     var v = (typeof APP_VERSION !== 'undefined') ? APP_VERSION : '?';
     var d = diagText();
     el.textContent = v + (d ? ' · ' + d : '');
+    el.title = 'Antippen für den Cloud-Test';
+
     el.className = 'version-line' +
       (d === 'Cloud verbunden' ? ' version-ok' : (d ? ' version-bad' : ''));
     el.onclick = function () {
-      if (typeof FB_DIAG === 'undefined') return;
-      alert('Version: ' + v +
-            '\nStatus: ' + FB_DIAG.status +
-            '\nCode: ' + (FB_DIAG.code || '—') +
-            '\nDetail: ' + (FB_DIAG.detail || '—'));
+      el.textContent = v + ' · teste Cloud…';
+      cloudSelfTest(function (report) {
+        alert(report);
+        renderVersionLine();
+      });
     };
 
     // Der Cloud-Status trifft erst ein paar Sekunden später ein (Anmeldung

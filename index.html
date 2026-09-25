@@ -7,8 +7,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mia Lou">
   <title>Mia Lou's Spielkiste</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="style_profiles.css">
+  <!-- Verhindert, dass Safari eine alte Fassung aus dem Cache anzeigt.
+       Ohne das sieht man nach einem Update tagelang noch die alte App. -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style_profiles.css?v=15">
 </head>
 <body>
 <div id="app">
@@ -533,15 +538,15 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="app.js"></script>
-<script src="game_einmaleins.js"></script>
-<script src="game_durch.js"></script>
-<script src="game_plus.js"></script>
-<script src="game_minus.js"></script>
-<script src="game_rechtschreibung.js"></script>
-<script src="stats.js"></script>
-<script src="profiles.js"></script>
+<script src="firebase-config.js?v=15"></script>
+<script src="app.js?v=15"></script>
+<script src="game_einmaleins.js?v=15"></script>
+<script src="game_durch.js?v=15"></script>
+<script src="game_plus.js?v=15"></script>
+<script src="game_minus.js?v=15"></script>
+<script src="game_rechtschreibung.js?v=15"></script>
+<script src="stats.js?v=15"></script>
+<script src="profiles.js?v=15"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();

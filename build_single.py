@@ -129,6 +129,10 @@ function resolveImg(path) {
     )
 
     # Inline CSS (beide Stylesheets)
+    # Die ?v=NN-Anhänge dienen nur der Cache-Umgehung im Browser und werden
+    # hier weggeputzt, damit die Replaces unten zuverlässig greifen.
+    html = re.sub(r'(href|src)="([^"]+\.(?:css|js))\?v=\d+"', r'\1="\2"', html)
+
     html = html.replace(
         '<link rel="stylesheet" href="style.css">\n  <link rel="stylesheet" href="style_profiles.css">',
         f'<style>\n{css}\n{css_profiles}\n</style>'
