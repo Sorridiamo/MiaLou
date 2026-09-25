@@ -370,16 +370,45 @@ var PROFILES = (function () {
   }
 
   // === Punkte schenken (Eltern/Admin) ===
+  // Die Punkte werden ZUERST lokal gutgeschrieben und gelten damit sofort.
+  // Der Cloud-Schreibversuch läuft zusätzlich; schlägt er fehl, bleiben die
+  // Punkte trotzdem erhalten (nur eben bis auf Weiteres nur auf diesem Gerät).
   function giftPoints(profileId, amount, done) {
     amount = parseInt(amount, 10);
     if (!amount || amount < 1) { if (done) done(false, 'Bitte eine Zahl grösser als 0 eingeben.'); return; }
+
+    var localTotal = APP.addPointsTo ? APP.addPointsTo(profileId, amount) : null;
+
     var ref = rootRef('profiles/' + profileId + '/points');
-    if (!ref) { if (done) done(false, 'Keine Verbindung zur Datenbank.'); return; }
+    if (!ref) {
+      if (done) done(true, 'Nur auf diesem Gerät gespeichert (keine Cloud-Verbindung).', localTotal);
+      return;
+    }
+
+    var finished = false;
+    function finish(ok, msg, total) {
+      if (finished) return;
+      finished = true;
+      if (done) done(ok, msg, total);
+    }
+    // Zeitlimit: antwortet die Cloud nicht, gilt der lokale Stand.
+    var timer = setTimeout(function () {
+      noteDbError('Punkte schreiben', { code: 'timeout', message: 'Keine Antwort nach 4 Sekunden.' });
+      finish(true, 'Nur auf diesem Gerät gespeichert (Cloud antwortet nicht).', localTotal);
+    }, 4000);
+
     // Transaction: verhindert, dass parallele Änderungen sich überschreiben
     ref.transaction(function (current) {
       return (typeof current === 'number' ? current : 0) + amount;
     }, function (err, committed, snap) {
-      if (done) done(!err && committed, err ? 'Speichern fehlgeschlagen.' : '', snap ? snap.val() : null);
+      clearTimeout(timer);
+      if (err || !committed) {
+        noteDbError('Punkte schreiben', err || { code: 'not-committed', message: 'Schreibvorgang abgewiesen.' });
+        finish(true, 'Nur auf diesem Gerät gespeichert (Cloud verweigert den Zugriff).', localTotal);
+        return;
+      }
+      // Cloud hat gewonnen: deren Stand ist maßgeblich.
+      finish(true, '', snap ? snap.val() : localTotal);
     });
   }
 
@@ -708,7 +737,10 @@ var PROFILES = (function () {
     var amount = (document.getElementById('pd-gift-amount') || {}).value || '';
     giftPoints(parentContextId, amount, function (ok, err, newTotal) {
       if (ok) {
-        setMsg('pd-gift-msg', 'Geschenkt! Neuer Stand: ' + newTotal + ' Punkte.', true);
+        // err ist hier kein Fehler, sondern ggf. ein Hinweis ("nur lokal").
+        var txt = 'Geschenkt! Neuer Stand: ' + newTotal + ' Punkte.';
+        if (err) txt += ' Hinweis: ' + err;
+        setMsg('pd-gift-msg', txt, true);
         var g = document.getElementById('pd-gift-amount'); if (g) g.value = '';
         // Falls das Kind gerade aktiv ist, Anzeige sofort aktualisieren
         if (APP.getActiveProfileId && APP.getActiveProfileId() === parentContextId) {

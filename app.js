@@ -291,6 +291,26 @@ var APP = (function() {
     }
   }
 
+  // Punkte einem bestimmten Kind gutschreiben — auch wenn die Cloud nicht
+  // erreichbar ist. Wird vom Elternbereich ("Punkte schenken") als Fallback
+  // benutzt, damit das Schenken nie komplett scheitert.
+  // Rückgabe: der neue Punktestand.
+  function addPointsTo(profileId, amount) {
+    amount = parseInt(amount, 10) || 0;
+    var key = KEY_POINTS + '__' + profileId;
+    var current = 0;
+    try { current = parseInt(localStorage.getItem(key), 10) || 0; } catch (e) {}
+    var next = current + amount;
+    try { localStorage.setItem(key, next); } catch (e) {}
+    // Ist es das gerade aktive Kind, sofort auch im Speicher und auf dem
+    // Bildschirm nachziehen.
+    if (profileId === PROFILE_ID) {
+      points = next;
+      updatePointsDisplays();
+    }
+    return next;
+  }
+
   // === Navigation ===
   function goTo(screen) {
     var screens = document.querySelectorAll('.screen');
@@ -663,6 +683,7 @@ var APP = (function() {
     openInventory: openInventory,
     closeInventory: closeInventory,
     addPoint: addPoint,
+    addPointsTo: addPointsTo,
     getPoints: getPoints,
     updatePointsDisplays: updatePointsDisplays,
     updateProfileHeader: updateProfileHeader,
