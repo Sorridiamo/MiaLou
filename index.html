@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=19">
-  <link rel="stylesheet" href="style_profiles.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style_profiles.css?v=20">
 </head>
 <body>
 <div id="app">
@@ -672,15 +672,34 @@
     </div>
     <h1 class="section-title">Welt der Preise</h1>
     <p class="worlds-sub">Wähle eine Landschaft und gestalte sie mit Stickern!</p>
+    <p id="worlds-progress" class="worlds-progress"></p>
+    <p id="worlds-locked-hint" class="worlds-locked-hint hidden"></p>
     <div class="worlds-grid">
-      <div class="world-card" onclick="APP.openWorld('forest')"><img src="images/world_forest.png" alt="Wald"><span>Wald</span></div>
-      <div class="world-card" onclick="APP.openWorld('ocean')"><img src="images/world_ocean.png" alt="Meer"><span>Meer</span></div>
-      <div class="world-card" onclick="APP.openWorld('farm')"><img src="images/world_farm.png" alt="Bauernhof"><span>Bauernhof</span></div>
-      <div class="world-card" onclick="APP.openWorld('mountain')"><img src="images/world_mountain.png" alt="Berge"><span>Berge</span></div>
-      <div class="world-card" onclick="APP.openWorld('village')"><img src="images/world_village.png" alt="Dorf"><span>Dorf</span></div>
-      <div class="world-card" onclick="APP.openWorld('circus')"><img src="images/world_circus.png" alt="Zirkus"><span>Zirkus</span></div>
+      <div class="world-card" data-world="forest" onclick="APP.openWorld('forest')"><img src="images/world_forest.png" alt="Wald"><span>Wald</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="ocean" onclick="APP.openWorld('ocean')"><img src="images/world_ocean.png" alt="Meer"><span>Meer</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="farm" onclick="APP.openWorld('farm')"><img src="images/world_farm.png" alt="Bauernhof"><span>Bauernhof</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="mountain" onclick="APP.openWorld('mountain')"><img src="images/world_mountain.png" alt="Berge"><span>Berge</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="village" onclick="APP.openWorld('village')"><img src="images/world_village.png" alt="Dorf"><span>Dorf</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="circus" onclick="APP.openWorld('circus')"><img src="images/world_circus.png" alt="Zirkus"><span>Zirkus</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="park" onclick="APP.openWorld('park')"><img src="images/world_park.png" alt="Freizeitpark"><span>Freizeitpark</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="castle" onclick="APP.openWorld('castle')"><img src="images/world_castle.png" alt="Schloss"><span>Schloss</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="veggie" onclick="APP.openWorld('veggie')"><img src="images/world_veggie.png" alt="Gemüsegarten"><span>Gemüsegarten</span><span class="world-lock hidden"></span></div>
+      <div class="world-card" data-world="space" onclick="APP.openWorld('space')"><img src="images/world_space.png" alt="Weltall"><span>Weltall</span><span class="world-lock hidden"></span></div>
     </div>
     <button class="home-btn home-btn-gold" onclick="APP.goTo('shop')" style="margin-top:12px">Sticker-Shop</button>
+  </div>
+
+  <!-- ===== NEUE WELT FREIGESCHALTET (Overlay über allem) ===== -->
+  <div id="world-unlock" class="world-unlock hidden">
+    <div id="wu-particles" class="wu-particles"></div>
+    <div class="wu-card">
+      <p class="wu-kicker">Eine neue Welt ist offen!</p>
+      <img id="wu-img" class="wu-img" src="" alt="Neue Welt">
+      <h2 id="wu-name" class="wu-name"></h2>
+      <p id="wu-need" class="wu-need"></p>
+      <button class="start-btn" onclick="APP.openUnlockedWorld()">Welt ansehen</button>
+      <button class="home-link" onclick="APP.closeWorldUnlock()">Später</button>
+    </div>
   </div>
 
   <!-- ===== WORLD VIEW ===== -->
@@ -724,17 +743,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=19"></script>
-<script src="app.js?v=19"></script>
-<script src="game_einmaleins.js?v=19"></script>
-<script src="game_durch.js?v=19"></script>
-<script src="game_plus.js?v=19"></script>
-<script src="game_minus.js?v=19"></script>
-<script src="game_rechtschreibung.js?v=19"></script>
-<script src="game_english.js?v=19"></script>
-<script src="game_geld.js?v=19"></script>
-<script src="stats.js?v=19"></script>
-<script src="profiles.js?v=19"></script>
+<script src="firebase-config.js?v=20"></script>
+<script src="app.js?v=20"></script>
+<script src="game_einmaleins.js?v=20"></script>
+<script src="game_durch.js?v=20"></script>
+<script src="game_plus.js?v=20"></script>
+<script src="game_minus.js?v=20"></script>
+<script src="game_rechtschreibung.js?v=20"></script>
+<script src="game_english.js?v=20"></script>
+<script src="game_geld.js?v=20"></script>
+<script src="stats.js?v=20"></script>
+<script src="profiles.js?v=20"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();

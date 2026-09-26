@@ -34,8 +34,30 @@ var APP = (function() {
     swing:'Schaukel'
   };
 
-  var WORLDS = ['forest','ocean','farm','mountain','village','circus'];
-  var WORLD_NAMES = { forest:'Wald', ocean:'Meer', farm:'Bauernhof', mountain:'Berge', village:'Dorf', circus:'Zirkus' };
+  var WORLDS = ['forest','ocean','farm','mountain','village','circus','park','castle','veggie','space'];
+  var WORLD_NAMES = { forest:'Wald', ocean:'Meer', farm:'Bauernhof', mountain:'Berge', village:'Dorf', circus:'Zirkus',
+                      park:'Freizeitpark', castle:'Schloss', veggie:'Gemüsegarten', space:'Weltall' };
+
+  // === Welten, die erst ab einer Punktzahl aufgehen ===
+  // Gezählt wird der Lebenszeit-Punktestand (totalEarned): auch Punkte, die
+  // schon für Sticker ausgegeben wurden, zählen mit. Eine Welt geht also auf
+  // und bleibt für immer offen — sie kann nicht wieder verschwinden.
+  // Neue Belohnungswelt: hier eine Zeile ergänzen, Bild images/world_<id>.png
+  // ablegen und in index.html eine Karte mit data-world="<id>" einfügen.
+  var LOCKED_WORLDS = [
+    { id: 'park',   name: 'Freizeitpark',  need: 500 },
+    { id: 'castle', name: 'Schloss',       need: 1000 },
+    { id: 'veggie', name: 'Gemüsegarten',  need: 1500 },
+    { id: 'space',  name: 'Weltall',       need: 2000 }
+  ];
+
+  function isWorldUnlocked(worldId) {
+    for (var i = 0; i < LOCKED_WORLDS.length; i++) {
+      if (LOCKED_WORLDS[i].id === worldId) return totalEarned >= LOCKED_WORLDS[i].need;
+    }
+    return true;   // alle übrigen Welten sind von Anfang an offen
+  }
+
   var PRIZE_COST = 25;
 
   // === LocalStorage keys (prefixed) — dienen als Offline-Cache ===
@@ -45,6 +67,9 @@ var APP = (function() {
   var KEY_OWNED = 'spielkiste_owned_stickers';
   var KEY_PLACED = 'spielkiste_placed_stickers';
   var KEY_PENDING_GIFT = 'spielkiste_pending_gift'; // ungeöffnetes Geschenk (Punkte von den Eltern)
+  // Lebenszeit-Summe aller je verdienten Punkte. Wird NIE kleiner — auch nicht,
+  // wenn Punkte für Sticker ausgegeben werden. Steuert die Belohnungswelten.
+  var KEY_TOTAL_EARNED = 'spielkiste_total_earned';
 
   // === Cloud sync (Firebase Realtime Database) ===
   // Jedes Kind hat seinen eigenen Zweig 'profiles/<profileId>'.
@@ -93,6 +118,7 @@ var APP = (function() {
 
   // === State ===
   var points = 0;
+  var totalEarned = 0; // Lebenszeit-Summe: steuert die Belohnungswelten, sinkt nie
   var pendingGift = 0; // geschenkte Punkte, die das Kind noch nicht "geöffnet" hat
   var ownedStickers = []; // sticker IDs the user bought
   var placedStickers = {}; // { worldId: [{id, x, y}, ...] }
@@ -110,8 +136,12 @@ var APP = (function() {
       ownedStickers = JSON.parse(localStorage.getItem(pk(KEY_OWNED))) || [];
       placedStickers = JSON.parse(localStorage.getItem(pk(KEY_PLACED))) || {};
       pendingGift = parseInt(localStorage.getItem(pk(KEY_PENDING_GIFT)), 10) || 0;
+      // Bestehende Profile haben den Key noch nicht: dann gilt der aktuelle
+      // Punktestand als bisher verdiente Summe (nichts geht verloren).
+      totalEarned = parseInt(localStorage.getItem(pk(KEY_TOTAL_EARNED)), 10) || 0;
+      if (totalEarned < points) totalEarned = points;
     } catch(e) {
-      points = 0; ownedStickers = []; placedStickers = {}; pendingGift = 0;
+      points = 0; ownedStickers = []; placedStickers = {}; pendingGift = 0; totalEarned = 0;
     }
   }
 
@@ -136,6 +166,10 @@ var APP = (function() {
       ownedStickers = Array.isArray(data.ownedStickers) ? data.ownedStickers : [];
       placedStickers = data.placedStickers || {};
       pendingGift = typeof data.pendingGift === 'number' ? data.pendingGift : 0;
+      // Immer der höhere Wert gewinnt: so kann eine freigeschaltete Welt nicht
+      // durch einen älteren Stand von einem anderen Gerät wieder zugehen.
+      var cloudEarned = typeof data.totalEarned === 'number' ? data.totalEarned : 0;
+      totalEarned = Math.max(totalEarned, cloudEarned, points);
       suppressNextWrite = false;
 
       // Lokalen Cache aktuell halten (für Offline-Start)
@@ -144,7 +178,12 @@ var APP = (function() {
         localStorage.setItem(pk(KEY_OWNED), JSON.stringify(ownedStickers));
         localStorage.setItem(pk(KEY_PLACED), JSON.stringify(placedStickers));
         localStorage.setItem(pk(KEY_PENDING_GIFT), pendingGift);
+        localStorage.setItem(pk(KEY_TOTAL_EARNED), totalEarned);
       } catch(e) {}
+      // Falls die Cloud noch keinen/einen kleineren Wert hatte: nachziehen.
+      if (cloudEarned < totalEarned) {
+        try { ref.child('totalEarned').set(totalEarned); } catch(e) {}
+      }
 
       // Spieldaten (Historie + Fehlerlisten aller Spiele) in den lokalen
       // Cache spiegeln, damit die Spiele sie synchron auslesen können.
@@ -206,6 +245,7 @@ var APP = (function() {
       ownedStickers: ownedStickers,
       placedStickers: placedStickers,
       pendingGift: pendingGift,
+      totalEarned: totalEarned,
       gameData: collectGameData()
     });
   }
@@ -214,6 +254,36 @@ var APP = (function() {
     try { localStorage.setItem(pk(KEY_POINTS), points); } catch(e) {}
     var ref = getDbRef();
     if (ref && !suppressNextWrite) ref.child('points').set(points);
+  }
+
+  // Zählt den Lebenszeit-Stand hoch und prüft, ob dadurch eine Welt aufgeht.
+  // Gibt die Liste der neu freigeschalteten Welten zurück.
+  function addEarned(amount) {
+    if (!amount || amount <= 0) return [];
+    var before = totalEarned;
+    totalEarned += amount;
+    try { localStorage.setItem(pk(KEY_TOTAL_EARNED), totalEarned); } catch(e) {}
+    var ref = getDbRef();
+    if (ref && !suppressNextWrite) ref.child('totalEarned').set(totalEarned);
+
+    var opened = [];
+    for (var i = 0; i < LOCKED_WORLDS.length; i++) {
+      var w = LOCKED_WORLDS[i];
+      if (before < w.need && totalEarned >= w.need) opened.push(w);
+    }
+    return opened;
+  }
+
+  function getTotalEarned() { return totalEarned; }
+
+  // Die nächste noch verschlossene Welt (für die Anzeige "noch X Punkte")
+  function getNextLockedWorld() {
+    for (var i = 0; i < LOCKED_WORLDS.length; i++) {
+      if (totalEarned < LOCKED_WORLDS[i].need) {
+        return { world: LOCKED_WORLDS[i], missing: LOCKED_WORLDS[i].need - totalEarned };
+      }
+    }
+    return null;
   }
 
   function saveOwned() {
@@ -270,6 +340,8 @@ var APP = (function() {
   function addPoint() {
     points++;
     savePoints();
+    var opened = addEarned(1);
+    if (opened.length > 0) showWorldUnlock(opened[0]);
   }
 
   function getPoints() { return points; }
@@ -332,6 +404,8 @@ var APP = (function() {
     var ref = getDbRef();
     if (ref && !suppressNextWrite) ref.child('pendingGift').set(0);
 
+    // Geschenkte Punkte zählen ebenfalls für die Belohnungswelten.
+    var opened = addEarned(amount);
     // Punktezahlen sofort aktualisieren (OHNE das Geschenk-Symbol zu verstecken —
     // das übernimmt gleich der eigene Timeout, damit die Zahl kurz sichtbar bleibt).
     var available = getPrizesAvailable();
@@ -352,7 +426,12 @@ var APP = (function() {
       setTimeout(function () {
         giftEl.classList.add('hidden');
         giftEl.classList.remove('gift-icon-opened');
+        // Erst nach dem Geschenk die Welt-Freischaltung zeigen, sonst
+        // überlagern sich die zwei Meldungen.
+        if (opened.length > 0) showWorldUnlock(opened[0]);
       }, 1600);
+    } else if (opened.length > 0) {
+      showWorldUnlock(opened[0]);
     }
   }
 
@@ -367,6 +446,15 @@ var APP = (function() {
     try { current = parseInt(localStorage.getItem(key), 10) || 0; } catch (e) {}
     var next = current + amount;
     try { localStorage.setItem(key, next); } catch (e) {}
+    // Auch die Lebenszeit-Summe des Kindes mitziehen, damit direkt
+    // gutgeschriebene Punkte für die Belohnungswelten zählen.
+    var eKey = KEY_TOTAL_EARNED + '__' + profileId;
+    try {
+      var eCur = parseInt(localStorage.getItem(eKey), 10) || 0;
+      if (eCur < current) eCur = current;   // Altprofil ohne Key
+      localStorage.setItem(eKey, eCur + amount);
+      if (profileId === PROFILE_ID) totalEarned = eCur + amount;
+    } catch (e) {}
     // Ist es das gerade aktive Kind, sofort auch im Speicher und auf dem
     // Bildschirm nachziehen.
     if (profileId === PROFILE_ID) {
@@ -416,7 +504,7 @@ var APP = (function() {
     if (screen === 'en-words') { EN.initWords(); }
     if (screen === 'ge-start') { GE.initStart(); }
     if (screen === 'shop') { renderShop(); }
-    if (screen === 'worlds') { /* nothing special */ }
+    if (screen === 'worlds') { renderWorlds(); }
     if (screen === 'profile-select') { PROFILES.renderProfileSelect(); }
     window.scrollTo(0, 0);
   }
@@ -475,11 +563,125 @@ var APP = (function() {
 
   // === WORLD VIEW ===
   function openWorld(worldId) {
+    // Verschlossene Belohnungswelt: nicht öffnen, sondern erklären, was fehlt.
+    if (!isWorldUnlocked(worldId)) {
+      var need = 0, nm = WORLD_NAMES[worldId] || 'Diese Welt';
+      for (var i = 0; i < LOCKED_WORLDS.length; i++) {
+        if (LOCKED_WORLDS[i].id === worldId) need = LOCKED_WORLDS[i].need;
+      }
+      showLockedHint(nm, Math.max(0, need - totalEarned));
+      return;
+    }
     currentWorld = worldId;
     document.getElementById('world-bg').src = 'images/world_' + worldId + '.png';
     goTo('world-view');
     renderAmbience(worldId);
     renderPlacedStickers();
+  }
+
+  // Kurzer Hinweis, wenn das Kind auf eine noch verschlossene Welt tippt.
+  function showLockedHint(name, missing) {
+    var el = document.getElementById('worlds-locked-hint');
+    if (!el) return;
+    el.textContent = name + ' geht auf, wenn du noch ' + missing + ' Punkte sammelst.';
+    el.classList.remove('hidden');
+    el.classList.remove('lock-hint-pop');
+    // Reflow erzwingen, damit die Animation bei jedem Tippen neu startet
+    void el.offsetWidth;
+    el.classList.add('lock-hint-pop');
+  }
+
+  // === Belohnungswelt freigeschaltet: Überraschungs-Overlay ===
+  // Wird von addPoint()/claimGift() aufgerufen, sobald eine Schwelle
+  // (500/1000/1500/2000) überschritten wird.
+  function showWorldUnlock(w) {
+    var ov = document.getElementById('world-unlock');
+    if (!ov) return;
+    var img = document.getElementById('wu-img');
+    var nameEl = document.getElementById('wu-name');
+    var needEl = document.getElementById('wu-need');
+    if (img) img.src = 'images/world_' + w.id + '.png';
+    if (nameEl) nameEl.textContent = w.name;
+    if (needEl) needEl.textContent = w.need + ' Punkte erreicht!';
+    ov.setAttribute('data-world', w.id);
+    ov.classList.remove('hidden');
+    spawnUnlockConfetti();
+  }
+
+  function closeWorldUnlock() {
+    var ov = document.getElementById('world-unlock');
+    if (ov) ov.classList.add('hidden');
+    renderWorlds();
+  }
+
+  // Direkt aus dem Overlay in die neue Welt springen
+  function openUnlockedWorld() {
+    var ov = document.getElementById('world-unlock');
+    var wid = ov ? ov.getAttribute('data-world') : null;
+    if (ov) ov.classList.add('hidden');
+    if (wid) openWorld(wid);
+  }
+
+  function spawnUnlockConfetti() {
+    var host = document.getElementById('wu-particles');
+    if (!host) return;
+    host.innerHTML = '';
+    var colors = ['#f5b0c0','#f5d98e','#b8d8a3','#a8d4e6','#d8b4f0','#f0b880'];
+    for (var i = 0; i < 40; i++) {
+      (function (idx) {
+        setTimeout(function () {
+          var el = document.createElement('div');
+          el.className = 'confetti';
+          el.style.left = (Math.random() * 100) + '%';
+          el.style.top = (-5 - Math.random() * 10) + '%';
+          el.style.background = colors[idx % colors.length];
+          el.style.width = (6 + Math.random() * 6) + 'px';
+          el.style.height = (8 + Math.random() * 8) + 'px';
+          el.style.animationDuration = (1.6 + Math.random()) + 's';
+          el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+          host.appendChild(el);
+          setTimeout(function () { el.remove(); }, 3000);
+        }, idx * 40);
+      })(i);
+    }
+  }
+
+  // Zeichnet die Welten-Übersicht: verschlossene Welten werden grau und mit
+  // Schloss-Symbol plus Punktehinweis dargestellt, statt sie zu verstecken —
+  // so sieht das Kind, worauf es sich freuen kann.
+  function renderWorlds() {
+    var cards = document.querySelectorAll('#worlds-screen .world-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var wid = card.getAttribute('data-world');
+      if (!wid) continue;
+      var badge = card.querySelector('.world-lock');
+      if (isWorldUnlocked(wid)) {
+        card.classList.remove('world-locked');
+        if (badge) badge.classList.add('hidden');
+      } else {
+        card.classList.add('world-locked');
+        var need = 0;
+        for (var j = 0; j < LOCKED_WORLDS.length; j++) {
+          if (LOCKED_WORLDS[j].id === wid) need = LOCKED_WORLDS[j].need;
+        }
+        if (badge) {
+          badge.textContent = '🔒 ' + need;
+          badge.classList.remove('hidden');
+        }
+      }
+    }
+    // Fortschrittszeile über dem Raster
+    var prog = document.getElementById('worlds-progress');
+    if (prog) {
+      var nx = getNextLockedWorld();
+      prog.textContent = nx
+        ? ('Insgesamt ' + totalEarned + ' Punkte gesammelt — noch ' + nx.missing +
+           ' bis ' + nx.world.name + '.')
+        : ('Insgesamt ' + totalEarned + ' Punkte gesammelt — alle Welten sind offen!');
+    }
+    var hint = document.getElementById('worlds-locked-hint');
+    if (hint) hint.classList.add('hidden');
   }
 
   // =====================================================================
@@ -505,7 +707,7 @@ var APP = (function() {
       clouds: false
     },
     mountain: {
-      birds: 2, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
+      birds: 0, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
       clouds: true
     },
     ocean: {
@@ -515,18 +717,35 @@ var APP = (function() {
       clouds: false
     },
     village: {
-      birds: 2, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
-      clouds: false
-    },
-    garden: {
-      birds: 1, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
-      bigFlowers: true,
+      birds: 0, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
       clouds: false
     },
     circus: {
       // Blumen unten am Bildrand wiegen sich, Schmetterlinge über der Wiese.
       birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
+      clouds: false
+    },
+    park: {
+      // Freizeitpark: Blumen am Bildrand, Schmetterlinge über dem Weg.
+      birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      bigFlowers: true,
+      clouds: false
+    },
+    castle: {
+      // Schloss: Wolken über den Türmen, Schmetterlinge auf der Wiese.
+      birds: 0, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
+      clouds: true
+    },
+    veggie: {
+      // Gemüsegarten: viele grosse Blüten und Schmetterlinge über den Beeten.
+      birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      bigFlowers: true,
+      clouds: false
+    },
+    space: {
+      // Weltall: nur funkelnde Sterne — keine Blumen, keine Wolken.
+      birds: 0, butterflies: 0, flowers: 0, sparks: 14, petals: 0,
       clouds: false
     }
   };
@@ -951,6 +1170,11 @@ var APP = (function() {
   return {
     goTo: goTo,
     openWorld: openWorld,
+    renderWorlds: renderWorlds,
+    closeWorldUnlock: closeWorldUnlock,
+    openUnlockedWorld: openUnlockedWorld,
+    isWorldUnlocked: isWorldUnlocked,
+    getTotalEarned: getTotalEarned,
     renderAmbience: renderAmbience,
     openInventory: openInventory,
     closeInventory: closeInventory,

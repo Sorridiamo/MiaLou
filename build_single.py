@@ -98,7 +98,8 @@ def main():
 
     world_map_entries = []
     for wf in ['world_forest.png', 'world_ocean.png', 'world_farm.png', 'world_mountain.png',
-               'world_village.png', 'world_circus.png']:
+               'world_village.png', 'world_circus.png',
+               'world_park.png', 'world_castle.png', 'world_veggie.png', 'world_space.png']:
         ref = 'images/' + wf
         if ref in b64_map:
             world_map_entries.append(f"  '{ref}': '{b64_map[ref]}'")
