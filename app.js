@@ -804,9 +804,15 @@ var APP = (function() {
     },
     farm: {
       // Nur noch Blumen — alles andere entfernt. Grössere Blüten, passend zum Feld.
+      // Die gemalten Blumen liegen nur im Beet unten links; rechts sind Weg und
+      // Gemüsebeet. Darum dürfen die Ambiente-Blumen nur in der linken Zone
+      // erscheinen, sonst landet z.B. eine Sonnenblume mitten auf der Strasse.
       butterflies: 0, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
-      clouds: false
+      clouds: false,
+      flowerZones: [
+        { leftMin: 2, leftMax: 40, topMin: 80, topMax: 97 }
+      ]
     },
     mountain: {
       butterflies: 2, flowers: 4, sparks: 0, petals: 0,
