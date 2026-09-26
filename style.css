@@ -285,6 +285,11 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 /* --- Schmetterling: flattert auf kleiner Rundbahn --- */
 .amb-butterfly { position: absolute; font-size: 15px; line-height: 1; opacity: 0.9; will-change: transform; }
 .amb-butterfly-inner { display: inline-block; animation: flutter 0.3s ease-in-out infinite; }
+/* Drei Farbvarianten: der Emoji-Schmetterling wird per Filter umgefärbt,
+   damit die drei Schmetterlinge klar unterscheidbar sind. */
+.amb-bf-blue   .amb-butterfly-inner { filter: hue-rotate(0deg) saturate(1.6); }
+.amb-bf-orange .amb-butterfly-inner { filter: hue-rotate(170deg) saturate(2) brightness(1.1); }
+.amb-bf-pink   .amb-butterfly-inner { filter: hue-rotate(255deg) saturate(2.2) brightness(1.05); }
 @keyframes flutter {
   0%, 100% { transform: scaleX(1) rotate(-6deg); }
   50% { transform: scaleX(0.55) rotate(6deg); }
@@ -329,30 +334,34 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
   100% { transform: translate(38px, 115%) rotate(320deg); opacity: 0; }
 }
 
-/* --- Fische (Ozean): schwimmen langsam durch --- */
-.amb-fish { position: absolute; font-size: 17px; line-height: 1; opacity: 0.8; }
-@keyframes fishSwimRight {
-  0%   { transform: translate(-12%, 0) scaleX(1); }
-  50%  { transform: translate(50%, -14px) scaleX(1); }
-  100% { transform: translate(114%, 6px) scaleX(1); }
+/* --- Krebse (Strand): laufen seitwärts hin und her, mit kleinem Wippen --- */
+.amb-crab { position: absolute; line-height: 1; opacity: 0.95; will-change: transform; }
+.amb-crab-inner { display: inline-block; animation: crabWobble 0.5s ease-in-out infinite; }
+@keyframes crabWobble {
+  0%, 100% { transform: rotate(-7deg) translateY(0); }
+  50% { transform: rotate(7deg) translateY(-1px); }
 }
-@keyframes fishSwimLeft {
-  0%   { transform: translate(112%, 0) scaleX(-1); }
-  50%  { transform: translate(48%, 16px) scaleX(-1); }
-  100% { transform: translate(-14%, -4px) scaleX(-1); }
+@keyframes crabWalk {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  45%  { transform: translate(90px, -6px) scaleX(1); }
+  50%  { transform: translate(90px, -6px) scaleX(-1); }
+  95%  { transform: translate(0, 4px) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
 }
 
-/* --- Luftblasen (Ozean): steigen nach oben --- */
-.amb-bubble {
-  position: absolute; border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.85), rgba(255,255,255,0.18) 60%, rgba(255,255,255,0.05) 100%);
-  border: 1px solid rgba(255,255,255,0.35);
+/* --- Schildkröten (Strand): wandern sehr langsam Richtung Wasser und zurück --- */
+.amb-turtle { position: absolute; line-height: 1; opacity: 0.95; will-change: transform; }
+.amb-turtle-inner { display: inline-block; animation: turtleBob 1.8s ease-in-out infinite; }
+@keyframes turtleBob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-2px) rotate(2deg); }
 }
-@keyframes bubbleRise {
-  0%   { transform: translate(0, 0) scale(0.7); opacity: 0; }
-  15%  { opacity: 0.75; }
-  85%  { opacity: 0.75; }
-  100% { transform: translate(14px, -320%) scale(1.1); opacity: 0; }
+@keyframes turtleWalk {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  45%  { transform: translate(120px, 18px) scaleX(1); }
+  52%  { transform: translate(120px, 18px) scaleX(-1); }
+  97%  { transform: translate(0, 0) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
 }
 
 /* Wer weniger Bewegung möchte (Systemeinstellung), bekommt ein ruhiges Bild. */

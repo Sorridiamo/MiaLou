@@ -34,7 +34,7 @@ var APP = (function() {
     swing:'Schaukel'
   };
 
-  var WORLDS = ['forest','ocean','farm','mountain'];
+  var WORLDS = ['forest','ocean','farm','mountain','village','garden'];
   var WORLD_NAMES = { forest:'Wald', ocean:'Meer', farm:'Bauernhof', mountain:'Berge' };
   var PRIZE_COST = 25;
 
@@ -492,21 +492,34 @@ var APP = (function() {
   // dann erscheint es automatisch.
   var AMBIENCE = {
     forest: {
-      birds: 2, butterflies: 3, flowers: 5, sparks: 7, petals: 3,
+      // Kein Vogel mehr (sah komisch aus). Schmetterlinge in drei Farben.
+      birds: 0, butterflies: 3, flowers: 5, sparks: 7, petals: 3,
       clouds: false   // im Wald sieht man den Himmel kaum — Wolken würden über den Wipfeln schweben
     },
     farm: {
-      birds: 3, butterflies: 2, flowers: 6, sparks: 0, petals: 2,
-      clouds: true
+      // Nur noch Blumen — alles andere entfernt. Grössere Blüten, passend zum Feld.
+      birds: 0, butterflies: 0, flowers: 5, sparks: 0, petals: 0,
+      bigFlowers: true,
+      clouds: false
     },
     mountain: {
-      birds: 2, butterflies: 1, flowers: 3, sparks: 4, petals: 0,
+      birds: 2, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
       clouds: true
     },
     ocean: {
-      birds: 1, butterflies: 0, flowers: 0, sparks: 5, petals: 0,
-      fish: 3, bubbles: 6,
-      clouds: true
+      // Nur kleine Krebse und Schildkröten, die sich am Strand bewegen.
+      birds: 0, butterflies: 0, flowers: 0, sparks: 0, petals: 0,
+      crabs: 3, turtles: 2,
+      clouds: false
+    },
+    village: {
+      birds: 2, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
+      clouds: false
+    },
+    garden: {
+      birds: 1, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      bigFlowers: true,
+      clouds: false
     }
   };
 
@@ -560,24 +573,32 @@ var APP = (function() {
     }
 
     // --- Schmetterlinge: flattern auf kleinen Rundbahnen in der Blumenzone ---
+    // Drei verschiedene Farben: der graue Emoji-Schmetterling wird per CSS-Filter
+    // eingefärbt (blau, orange/gelb, pink) — so sind alle drei unterscheidbar.
+    var butterflyTints = ['amb-bf-blue', 'amb-bf-orange', 'amb-bf-pink'];
     for (i = 0; i < (cfg.butterflies || 0); i++) {
       var flLeft = 8 + rnd() * 76;
       var flTop = 52 + rnd() * 34;               // untere Bildhälfte, wo die Blumen sind
       var flDur = 9 + rnd() * 8;
       var flDelay = rnd() * 7;
-      html += '<span class="amb-butterfly" style="left:' + flLeft.toFixed(1) + '%;top:' + flTop.toFixed(1) + '%;' +
+      html += '<span class="amb-butterfly ' + butterflyTints[i % butterflyTints.length] +
+              '" style="left:' + flLeft.toFixed(1) + '%;top:' + flTop.toFixed(1) + '%;' +
               'animation:butterflyPath ' + flDur.toFixed(1) + 's ease-in-out ' + flDelay.toFixed(1) + 's infinite">' +
               '<span class="amb-butterfly-inner">🦋</span></span>'; // 🦋
     }
 
     // --- Blumen, die sich im Wind wiegen ---
-    var flowerGlyphs = ['🌸', '🌼', '🌷', '🌺']; // 🌸 🌼 🌷 🌺
+    // Fünf verschiedene Farben. bigFlowers: grössere Blüten, damit sie auf dem
+    // Bauernhof/im Garten zur Grösse der gemalten Blumen passen.
+    var flowerGlyphs = ['🌸', '🌼', '🌷', '🌺', '🌻']; // 🌸 🌼 🌷 🌺 🌻
+    var flBase = cfg.bigFlowers ? 26 : 13;
+    var flSpread = cfg.bigFlowers ? 12 : 7;
     for (i = 0; i < (cfg.flowers || 0); i++) {
       var fLeft = 4 + rnd() * 90;
       var fTop = 74 + rnd() * 20;                // ganz unten, in der Blumenzone
       var fDur = 2.6 + rnd() * 2.2;              // langsames, ruhiges Wiegen
       var fDelay = rnd() * 3;
-      var fSize = 13 + rnd() * 7;
+      var fSize = flBase + rnd() * flSpread;
       html += '<span class="amb-flower" style="left:' + fLeft.toFixed(1) + '%;top:' + fTop.toFixed(1) + '%;' +
               'font-size:' + fSize.toFixed(0) + 'px;' +
               'animation:sway ' + fDur.toFixed(1) + 's ease-in-out ' + fDelay.toFixed(1) + 's infinite">' +
@@ -606,27 +627,32 @@ var APP = (function() {
               '🌿</span>'; // 🌿
     }
 
-    // --- Fische (nur Ozean) ---
-    for (i = 0; i < (cfg.fish || 0); i++) {
-      var fiTop = 45 + rnd() * 45;
-      var fiDur = 14 + rnd() * 12;
-      var fiDelay = rnd() * 10;
-      var fiDir = (i % 2 === 0) ? 'fishSwimRight' : 'fishSwimLeft';
-      html += '<span class="amb-fish" style="top:' + fiTop.toFixed(1) + '%;left:0;' +
-              'animation:' + fiDir + ' ' + fiDur.toFixed(1) + 's linear ' + fiDelay.toFixed(1) + 's infinite">' +
-              '🐟</span>'; // 🐟
+    // --- Krebse (nur Strand): laufen seitwärts über den Sand ---
+    // Die Sandzone im Meerbild liegt links/unten — deshalb tiefer Startpunkt
+    // und eine kurze, langsame Krabbelbahn statt eines Durchflugs.
+    for (i = 0; i < (cfg.crabs || 0); i++) {
+      var crTop = 76 + rnd() * 18;               // 76–94 % Höhe = Sandstreifen
+      var crLeft = 4 + rnd() * 46;               // linke Bildhälfte = Strand
+      var crDur = 9 + rnd() * 7;
+      var crDelay = rnd() * 8;
+      var crSize = 18 + rnd() * 8;
+      html += '<span class="amb-crab" style="left:' + crLeft.toFixed(1) + '%;top:' + crTop.toFixed(1) + '%;' +
+              'font-size:' + crSize.toFixed(0) + 'px;' +
+              'animation:crabWalk ' + crDur.toFixed(1) + 's ease-in-out ' + crDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-crab-inner">🦀</span></span>'; // 🦀
     }
 
-    // --- Luftblasen (nur Ozean) ---
-    for (i = 0; i < (cfg.bubbles || 0); i++) {
-      var buLeft = 8 + rnd() * 84;
-      var buTop = 70 + rnd() * 26;
-      var buSize = 5 + rnd() * 8;
-      var buDur = 7 + rnd() * 6;
-      var buDelay = rnd() * 9;
-      html += '<span class="amb-bubble" style="left:' + buLeft.toFixed(1) + '%;top:' + buTop.toFixed(1) + '%;' +
-              'width:' + buSize.toFixed(0) + 'px;height:' + buSize.toFixed(0) + 'px;' +
-              'animation:bubbleRise ' + buDur.toFixed(1) + 's linear ' + buDelay.toFixed(1) + 's infinite"></span>';
+    // --- Schildkröten (nur Strand): wandern ganz langsam Richtung Wasser ---
+    for (i = 0; i < (cfg.turtles || 0); i++) {
+      var tuTop = 70 + rnd() * 22;
+      var tuLeft = 2 + rnd() * 40;
+      var tuDur = 22 + rnd() * 14;               // sehr langsam
+      var tuDelay = rnd() * 10;
+      var tuSize = 20 + rnd() * 8;
+      html += '<span class="amb-turtle" style="left:' + tuLeft.toFixed(1) + '%;top:' + tuTop.toFixed(1) + '%;' +
+              'font-size:' + tuSize.toFixed(0) + 'px;' +
+              'animation:turtleWalk ' + tuDur.toFixed(1) + 's ease-in-out ' + tuDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-turtle-inner">🐢</span></span>'; // 🐢
     }
 
     layer.innerHTML = html;
