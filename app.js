@@ -165,18 +165,38 @@ var APP = (function() {
   // Wechselt das aktive Profil: alten Listener abmelden, lokalen Cache des
   // neuen Kindes laden, dann mit dem Cloud-Zweig des Kindes verbinden.
   function switchProfile(profileId) {
-    // Alten Listener abmelden, sonst schreiben zwei Profile durcheinander
+    stopCloudSync();
+    PROFILE_ID = profileId;
+    load();
+    updatePointsDisplays();
+    initCloudSync();
+  }
+
+  // Meldet den Live-Listener ab und vergisst das aktive Profil. Wichtig beim
+  // Löschen: sonst feuert der Listener, wenn Firebase den Zweig entfernt, mit
+  // data===null — das wurde bisher als "noch nie synchronisiert" verstanden
+  // und hat den gelöschten Zweig mit den lokalen Resten (ohne Name/Bild) neu
+  // angelegt, sodass das Profil als "Kind" wieder auftauchte.
+  function stopCloudSync() {
     if (cloudListener && dbRef) {
       try { dbRef.off('value', cloudListener); } catch (e) {}
     }
     cloudListener = null;
     dbRef = null;
     cloudReady = false;
+    PROFILE_ID = null;
+  }
 
-    PROFILE_ID = profileId;
-    load();
-    updatePointsDisplays();
-    initCloudSync();
+  // Entfernt alle lokal zwischengespeicherten Daten eines Profils (Punkte,
+  // Sticker, Spielverläufe). Wird beim endgültigen Löschen aufgerufen, damit
+  // auf dem Gerät keine Reste des Kindes übrig bleiben.
+  function clearLocalProfileData(profileId) {
+    if (!profileId) return;
+    var keys = [KEY_POINTS, KEY_OWNED, KEY_PLACED, KEY_PENDING_GIFT, KEY_TOTAL_EARNED]
+      .concat(GAME_DATA_KEYS);
+    for (var i = 0; i < keys.length; i++) {
+      try { localStorage.removeItem(keys[i] + '__' + profileId); } catch (e) {}
+    }
   }
 
   function getActiveProfileId() { return PROFILE_ID; }
@@ -1286,6 +1306,8 @@ var APP = (function() {
     updateProfileHeader: updateProfileHeader,
     // Profil-Anbindung
     switchProfile: switchProfile,
+    stopCloudSync: stopCloudSync,
+    clearLocalProfileData: clearLocalProfileData,
     getActiveProfileId: getActiveProfileId,
     startWhenReady: startWhenReady,
     // Gemeinsame Speicher-API — von allen Spielen genutzt, cloud-synchron

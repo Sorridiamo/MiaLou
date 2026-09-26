@@ -361,10 +361,18 @@ var PROFILES = (function () {
 
   // === Profil löschen (nur Eltern/Admin) ===
   function deleteProfile(profileId, done) {
+    // Wichtig: zuerst den Live-Listener von app.js abmelden. Sonst feuert er,
+    // sobald Firebase den Zweig entfernt, mit "keine Daten" — das wurde bisher
+    // als "noch nie synchronisiert" verstanden und hat den gelöschten Zweig
+    // mit den lokalen Resten (ohne Name/Bild) neu angelegt. Genau das liess
+    // das Profil als "Kind" wieder auftauchen, statt zu verschwinden.
+    if (activeProfileId === profileId && APP.stopCloudSync) APP.stopCloudSync();
+
     delete profileList[profileId];
     cacheList();
     renderProfileSelect();
     if (activeProfileId === profileId) activeProfileId = null;
+    if (APP.clearLocalProfileData) APP.clearLocalProfileData(profileId);
 
     var ref = rootRef('profiles/' + profileId);
     if (ref) {
