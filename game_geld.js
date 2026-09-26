@@ -553,9 +553,57 @@ var GE = (function () {
            '</div>';
   }
 
+  // --- Banknote als Bild ---
+  // Bewusst als SVG gezeichnet und nicht als gemaltes PNG: der Betrag ist
+  // rechnerisch entscheidend, und eine Schrift im SVG ist immer korrekt und
+  // scharf — ein generiertes Bild könnte "20.-" falsch schreiben.
+  // Farben orientieren sich an den echten Schweizer Noten:
+  // 10 gelb-orange, 20 rot, 50 grün-gelb, 100 blau.
+  var NOTE_LOOKS = {
+    1000:  { name: '10',  bg1: '#f6d68a', bg2: '#e8a53f', ink: '#7a4a08', line: '#c98a2c' },
+    2000:  { name: '20',  bg1: '#f3b19c', bg2: '#d9604a', ink: '#7d2317', line: '#c2503c' },
+    5000:  { name: '50',  bg1: '#dce79a', bg2: '#a2b84a', ink: '#4a5510', line: '#8da03a' },
+    10000: { name: '100', bg1: '#aecbe6', bg2: '#5d8fc0', ink: '#1d3d5c', line: '#4a79a8' }
+  };
+
+  // size: 'sm' (Kopfzeile) oder 'lg' (grosse Ansicht)
+  function noteBillHtml(note, size) {
+    var lk = NOTE_LOOKS[note] || NOTE_LOOKS[10000];
+    var w = size === 'lg' ? 260 : 150;
+    var h = Math.round(w * 0.52);
+    var gid = 'ngr' + note + size;
+    // viewBox bleibt konstant, damit alle Noten gleich aufgebaut sind und nur
+    // die Anzeigegrösse wechselt.
+    return '<svg class="ge-bill ge-bill-' + size + '" width="' + w + '" height="' + h + '" ' +
+           'viewBox="0 0 260 135" role="img" ' +
+           'aria-label="Banknote ' + lk.name + ' Franken">' +
+             '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="1" y2="1">' +
+               '<stop offset="0%" stop-color="' + lk.bg1 + '"/>' +
+               '<stop offset="100%" stop-color="' + lk.bg2 + '"/>' +
+             '</linearGradient></defs>' +
+             '<rect x="2" y="2" width="256" height="131" rx="10" fill="url(#' + gid + ')" ' +
+               'stroke="' + lk.line + '" stroke-width="3"/>' +
+             '<rect x="12" y="12" width="236" height="111" rx="6" fill="none" ' +
+               'stroke="' + lk.ink + '" stroke-width="1.5" opacity="0.35"/>' +
+             // kleines Muster links, damit es nach Note aussieht
+             '<circle cx="42" cy="67" r="21" fill="none" stroke="' + lk.ink + '" ' +
+               'stroke-width="2" opacity="0.4"/>' +
+             '<circle cx="42" cy="67" r="13" fill="none" stroke="' + lk.ink + '" ' +
+               'stroke-width="1.5" opacity="0.3"/>' +
+             '<text x="163" y="82" text-anchor="middle" font-size="54" font-weight="800" ' +
+               'fill="' + lk.ink + '" font-family="-apple-system, system-ui, sans-serif">' +
+               lk.name + '</text>' +
+             '<text x="163" y="106" text-anchor="middle" font-size="15" font-weight="700" ' +
+               'fill="' + lk.ink + '" opacity="0.8" ' +
+               'font-family="-apple-system, system-ui, sans-serif">FRANKEN</text>' +
+             '<text x="26" y="30" font-size="13" font-weight="700" fill="' + lk.ink + '" ' +
+               'opacity="0.75" font-family="-apple-system, system-ui, sans-serif">CHF</text>' +
+           '</svg>';
+  }
+
   function noteHtml(note) {
     return '<div class="ge-note"><span class="ge-note-label">Du bezahlst mit</span>' +
-           '<span class="ge-note-bill">' + frNote(note) + '</span></div>';
+           noteBillHtml(note, 'lg') + '</div>';
   }
 
   function inputRowHtml(placeholder, unitLabel) {
@@ -597,10 +645,17 @@ var GE = (function () {
     var st = changeSteps[stepIndex];
     var html = '<div class="ge-step-label">Schritt 2 von 2 — Rückgeld</div>';
 
-    // Kopfzeile: was schon bekannt ist
+    // Kopfzeile: was schon bekannt ist. Gross und mit Bild der Note, damit das
+    // Kind jederzeit sieht, womit bezahlt wurde.
     html += '<div class="ge-summary">' +
-              '<span>Einkauf: <strong>' + fr(t.total) + '</strong></span>' +
-              '<span>Bezahlt: <strong>' + frNote(t.note) + '</strong></span>' +
+              '<div class="ge-sum-box">' +
+                '<span class="ge-sum-lbl">Einkauf</span>' +
+                '<span class="ge-sum-val">' + fr(t.total) + '</span>' +
+              '</div>' +
+              '<div class="ge-sum-box ge-sum-note">' +
+                '<span class="ge-sum-lbl">Bezahlt mit</span>' +
+                noteBillHtml(t.note, 'sm') +
+              '</div>' +
             '</div>';
 
     // Bisherige Schritte als kleine Treppe — das Kind sieht den Weg
