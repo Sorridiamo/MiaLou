@@ -717,7 +717,10 @@ var APP = (function() {
       clouds: false
     },
     village: {
-      birds: 0, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
+      // Kein Vogel, keine Schmetterlinge — stattdessen krabbeln kleine
+      // Marienkäfer über das Pflaster.
+      birds: 0, butterflies: 0, flowers: 4, sparks: 0, petals: 0,
+      ladybugs: 5,
       clouds: false
     },
     circus: {
@@ -880,6 +883,22 @@ var APP = (function() {
               'font-size:' + tuSize.toFixed(0) + 'px;' +
               'animation:turtleWalk ' + tuDur.toFixed(1) + 's ease-in-out ' + tuDelay.toFixed(1) + 's infinite">' +
               '<span class="amb-turtle-inner">🐢</span></span>'; // 🐢
+    }
+
+    // --- Marienkäfer: krabbeln unten über den Boden, mit kurzen Pausen ---
+    // Sie bleiben in der unteren Bildhälfte (Pflaster/Weg) und laufen auf
+    // verschiedenen Bahnen hin und zurück, damit es lebendig aussieht.
+    for (i = 0; i < (cfg.ladybugs || 0); i++) {
+      var lbTop = 66 + rnd() * 28;                // 66–94 % Höhe = Boden
+      var lbLeft = 4 + rnd() * 62;
+      var lbDur = 13 + rnd() * 12;                // langsames Krabbeln
+      var lbDelay = rnd() * 9;
+      var lbSize = 12 + rnd() * 7;                // kleine Käfer
+      var lbPath = (i % 2 === 0) ? 'ladybugWalk' : 'ladybugWalkAlt';
+      html += '<span class="amb-ladybug" style="left:' + lbLeft.toFixed(1) + '%;top:' + lbTop.toFixed(1) + '%;' +
+              'font-size:' + lbSize.toFixed(0) + 'px;' +
+              'animation:' + lbPath + ' ' + lbDur.toFixed(1) + 's ease-in-out ' + lbDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-ladybug-inner">🐞</span></span>'; // 🐞
     }
 
     layer.innerHTML = html;

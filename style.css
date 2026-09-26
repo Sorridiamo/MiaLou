@@ -421,6 +421,38 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
   100% { transform: translate(0, 0) scaleX(1); }
 }
 
+/* --- Marienkäfer: krabbeln über den Boden, mit winzigem Wackeln --- */
+.amb-ladybug { position: absolute; line-height: 1; opacity: 0.95; will-change: transform; }
+.amb-ladybug-inner { display: inline-block; animation: ladybugWobble 0.42s ease-in-out infinite; }
+@keyframes ladybugWobble {
+  0%, 100% { transform: rotate(-5deg) translateY(0); }
+  50% { transform: rotate(5deg) translateY(-1px); }
+}
+/* Zwei Bahnen, damit nicht alle Käfer gleich laufen. Kurze Pausen dazwischen
+   (gleiche Werte über mehrere Keyframes) wirken wie echtes Stehenbleiben. */
+@keyframes ladybugWalk {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  18%  { transform: translate(34px, 5px) scaleX(1); }
+  26%  { transform: translate(34px, 5px) scaleX(1); }   /* Pause */
+  46%  { transform: translate(78px, -4px) scaleX(1); }
+  52%  { transform: translate(78px, -4px) scaleX(-1); }
+  74%  { transform: translate(30px, 8px) scaleX(-1); }
+  80%  { transform: translate(30px, 8px) scaleX(-1); }  /* Pause */
+  98%  { transform: translate(0, 0) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+@keyframes ladybugWalkAlt {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  22%  { transform: translate(26px, -7px) scaleX(1); }
+  30%  { transform: translate(26px, -7px) scaleX(1); }  /* Pause */
+  48%  { transform: translate(58px, 6px) scaleX(1); }
+  54%  { transform: translate(58px, 6px) scaleX(-1); }
+  70%  { transform: translate(40px, -3px) scaleX(-1); }
+  76%  { transform: translate(40px, -3px) scaleX(-1); } /* Pause */
+  98%  { transform: translate(0, 0) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+
 /* Wer weniger Bewegung möchte (Systemeinstellung), bekommt ein ruhiges Bild. */
 @media (prefers-reduced-motion: reduce) {
   .world-ambience { display: none; }
