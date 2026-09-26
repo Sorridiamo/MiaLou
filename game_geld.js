@@ -847,11 +847,8 @@ var GE = (function () {
     var pct = done > 0 ? Math.round((correctCount / done) * 100) : 0;
     saveGameErrors();
 
-    var now = new Date();
-    var ds = now.getDate().toString().padStart(2, '0') + '.' +
-             (now.getMonth() + 1).toString().padStart(2, '0') + '.' + now.getFullYear() +
-             ', ' + now.getHours().toString().padStart(2, '0') + ':' +
-             now.getMinutes().toString().padStart(2, '0');
+    // Zeitstempel immer in Schweizer Zeit (siehe APP.nowCH)
+    var ds = APP.nowCH();
 
     var wrongTasks = [], k;
     for (k in gameErrors) wrongTasks.push(k);

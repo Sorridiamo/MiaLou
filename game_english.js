@@ -754,9 +754,8 @@ var EN = (function () {
     if (firstTryCorrect < 0) firstTryCorrect = 0;
     var firstTryPct = TOTAL > 0 ? Math.round((firstTryCorrect / TOTAL) * 100) : 0;
 
-    var now = new Date();
-    var ds = ('0' + now.getDate()).slice(-2) + '.' + ('0' + (now.getMonth() + 1)).slice(-2) + '.' + now.getFullYear() +
-      ', ' + ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+    // Zeitstempel immer in Schweizer Zeit (siehe APP.nowCH)
+    var ds = APP.nowCH();
     saveGameHistory({
       date: ds, totalWords: TOTAL, correctPct: firstTryPct,
       durationSec: Math.round(dur), avgTimeSec: Math.round(avgTime * 10) / 10,

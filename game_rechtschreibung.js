@@ -534,8 +534,8 @@ var RS = (function() {
     var firstTryCorrect=TOTAL-errorWords.length;
     var firstTryPct=Math.round((firstTryCorrect/TOTAL)*100);
 
-    var now=new Date();
-    var ds=now.getDate().toString().padStart(2,'0')+'.'+(now.getMonth()+1).toString().padStart(2,'0')+'.'+now.getFullYear()+', '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
+    var ds = APP.nowCH();   // immer Schweizer Zeit
     saveGameHistory({date:ds,totalWords:TOTAL,correctPct:firstTryPct,durationSec:Math.round(dur),avgTimeSec:Math.round(avgTime*10)/10,categories:selectedCategories.slice(),catStats:JSON.parse(JSON.stringify(catStats)),wrongWords:errorWords.slice()});
 
     if(firstTryPct===100){mouseImg.src='images/mouse_perfect.png';}else{mouseImg.src=mouseCorrect;}mouseImg.style.opacity='1';

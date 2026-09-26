@@ -85,6 +85,55 @@ var APP = (function() {
     return PROFILE_ID ? (base + '__' + PROFILE_ID) : base;
   }
 
+  // === Datum und Zeit: immer Schweizer Zeit ===
+  // Wichtig: die App läuft auch auf Geräten, deren Zeitzone auf UTC oder auf
+  // ein anderes Land gesetzt ist (oder in der Cloud). Dann stand in der
+  // Statistik z.B. 05:17 statt 07:17. Darum wird hier bewusst nicht die
+  // Gerätezeit genommen, sondern explizit Europe/Zurich — inklusive
+  // Sommerzeit-Umstellung, die die Zeitzonen-Datenbank automatisch kennt.
+  var CH_TZ = 'Europe/Zurich';
+
+  // Liefert die Bestandteile der aktuellen Schweizer Zeit als Zahlen.
+  function chParts(dateObj) {
+    var d = dateObj || new Date();
+    try {
+      var fmt = new Intl.DateTimeFormat('de-CH', {
+        timeZone: CH_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      });
+      var out = {};
+      var parts = fmt.formatToParts(d);
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type !== 'literal') out[parts[i].type] = parseInt(parts[i].value, 10);
+      }
+      // 24:00 kommt in manchen Umgebungen für Mitternacht — auf 0 normalisieren
+      if (out.hour === 24) out.hour = 0;
+      if (out.year && out.month && out.day) return out;
+    } catch (e) { /* ältere Engine ohne Intl-Zeitzonen: unten Fallback */ }
+    // Fallback: Gerätezeit. Besser eine Zeit als keine.
+    return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate(),
+             hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds() };
+  }
+
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // 'TT.MM.JJJJ, HH:MM' in Schweizer Zeit — das Format, in dem alle Spiele
+  // ihre Verlaufseinträge speichern. Nicht ändern, sonst passen alte Einträge
+  // nicht mehr zum Parser in stats.js.
+  function nowCH() {
+    var t = chParts();
+    return p2(t.day) + '.' + p2(t.month) + '.' + t.year + ', ' + p2(t.hour) + ':' + p2(t.minute);
+  }
+
+  // Formatiert ein bereits geparstes Datum-Objekt (aus stats.js) zur Anzeige.
+  // Die Werte darin sind schon Schweizer Zeit, weil sie so gespeichert wurden —
+  // hier darf also NICHT noch einmal umgerechnet werden.
+  function fmtCH(d) {
+    if (!d) return '';
+    return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() +
+           ', ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+  }
+
   function getDbRef() {
     if (!PROFILE_ID) return null;
     if (dbRef) return dbRef;
@@ -1187,6 +1236,9 @@ var APP = (function() {
     isWorldUnlocked: isWorldUnlocked,
     getTotalEarned: getTotalEarned,
     renderAmbience: renderAmbience,
+    nowCH: nowCH,
+    fmtCH: fmtCH,
+    chParts: chParts,
     openInventory: openInventory,
     closeInventory: closeInventory,
     addPoint: addPoint,

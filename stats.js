@@ -106,6 +106,10 @@ var STATS = (function () {
   var currentFilter = 'all';
 
   // "25.09.2026, 20:14" -> Date  (Format der Spiele)
+  // Achtung: die gespeicherte Zeichenkette ist bereits Schweizer Zeit
+  // (siehe APP.nowCH). Hier wird sie nur in ein Date-Objekt zerlegt, damit man
+  // sortieren und Tage zählen kann — bewusst OHNE Zeitzonen-Umrechnung, sonst
+  // würde die Zeit ein zweites Mal verschoben.
   function parseDate(ds) {
     if (!ds) return null;
     var m = String(ds).match(/^(\d{2})\.(\d{2})\.(\d{4})(?:,\s*(\d{2}):(\d{2}))?/);
@@ -249,6 +253,10 @@ var STATS = (function () {
   }
 
   function fmtDate(d) {
+    // Einheitlich über APP, damit es nur eine Formatierung gibt.
+    // Die Werte in d sind schon Schweizer Zeit (so gespeichert) — darum
+    // wird hier nur ausgelesen, nicht noch einmal umgerechnet.
+    if (typeof APP !== 'undefined' && APP.fmtCH) return APP.fmtCH(d);
     function p(n) { return (n < 10 ? '0' : '') + n; }
     return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() +
            ', ' + p(d.getHours()) + ':' + p(d.getMinutes());

@@ -372,8 +372,8 @@ var MI = (function() {
     var firstTryCorrect = TOTAL - Object.keys(gameErrors).length;
     var firstTryPct = Math.round((firstTryCorrect / TOTAL) * 100);
 
-    var now = new Date();
-    var ds = now.getDate().toString().padStart(2, '0') + '.' + (now.getMonth() + 1).toString().padStart(2, '0') + '.' + now.getFullYear() + ', ' + now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+    var ds = APP.nowCH();   // immer Schweizer Zeit
     var errorKeys = Object.keys(gameErrors), wrongTasks = [];
     for (var i = 0; i < errorKeys.length; i++) { var p = errorKeys[i].split('_'); wrongTasks.push(p[0] + '−' + p[1]); }
 
