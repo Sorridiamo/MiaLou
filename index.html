@@ -123,7 +123,7 @@
         <button class="small-btn" onclick="PROFILES.submitGift()">Schenken</button>
       </div>
       <p id="pd-gift-msg" class="form-msg"></p>
-      <p class="form-hint">25 Punkte = 1 Sticker im Shop.</p>
+      <p class="form-hint">Das Kind sieht ein Geschenk-Symbol auf der Startseite und muss es antippen, damit die Punkte gutgeschrieben werden. 25 Punkte = 1 Sticker im Shop.</p>
     </div>
 
     <div class="pd-box">
@@ -157,18 +157,26 @@
   <!-- ===== HOME ===== -->
   <div id="home-screen" class="screen hidden">
     <div class="home-profile-bar">
-      <!-- Auf das eigene Bild tippen: Profilbild ändern (ohne Passwort) -->
-      <img id="home-profile-avatar" class="home-profile-avatar home-profile-avatar-btn"
-           src="" alt="Mein Bild ändern" title="Mein Bild ändern"
-           onclick="PROFILES.openMyAvatar()">
-      <span id="home-profile-name" class="home-profile-name"></span>
-      <button class="switch-btn" onclick="PROFILES.openMyAvatar()">Mein Bild</button>
-      <button class="switch-btn" onclick="PROFILES.openParentAreaForActive()">Eltern</button>
-      <button class="switch-btn" onclick="PROFILES.backToProfileSelect()">Wechseln</button>
+      <div class="home-profile-top">
+        <!-- Auf das eigene Bild tippen: Profilbild ändern (ohne Passwort) -->
+        <img id="home-profile-avatar" class="home-profile-avatar home-profile-avatar-btn"
+             src="" alt="Mein Bild ändern" title="Mein Bild ändern"
+             onclick="PROFILES.openMyAvatar()">
+        <span id="home-profile-name" class="home-profile-name"></span>
+      </div>
+      <div class="home-profile-actions">
+        <button class="switch-btn" onclick="PROFILES.openMyAvatar()">Mein Bild</button>
+        <button class="switch-btn" onclick="PROFILES.openParentAreaForActive()">Eltern</button>
+        <button class="switch-btn" onclick="PROFILES.backToProfileSelect()">Wechseln</button>
+      </div>
     </div>
     <h1 class="home-title">Mia Lou's Spielkiste</h1>
     <div class="home-hero-wrap"><img id="home-hero" src="images/start_hero.png" alt="Maus"></div>
     <div id="home-points" class="points-bar"></div>
+    <div id="home-gift" class="gift-icon-wrap hidden" onclick="APP.claimGift()">
+      <span class="gift-icon-emoji">🎁</span>
+      <span class="gift-icon-label">Ein Geschenk wartet auf dich! Tippen zum Öffnen.</span>
+    </div>
     <div class="home-buttons">
       <button class="home-btn home-btn-green" onclick="APP.goTo('em-start')">Einmaleins</button>
       <button class="home-btn home-btn-purple" onclick="APP.goTo('dr-start')">Durch</button>
@@ -216,6 +224,7 @@
 
   <!-- ===== EINMALEINS GAME ===== -->
   <div id="em-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="EM.endEarly()">Ende</button></div>
     <header><h1>Einmaleins</h1>
       <div class="score-bar"><span id="em-score-text">0 / 0</span>
         <div class="progress-track"><div id="em-progress-fill" class="progress-fill"></div></div>
@@ -278,6 +287,7 @@
 
   <!-- ===== DURCH GAME ===== -->
   <div id="dr-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="DR.endEarly()">Ende</button></div>
     <header><h1>Durch</h1>
       <div class="score-bar"><span id="dr-score-text">0 / 0</span>
         <div class="progress-track"><div id="dr-progress-fill" class="progress-fill"></div></div>
@@ -344,6 +354,7 @@
 
   <!-- ===== PLUS GAME ===== -->
   <div id="pl-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="PL.endEarly()">Ende</button></div>
     <header><h1>Plus</h1>
       <div class="score-bar"><span id="pl-score-text">0 / 0</span>
         <div class="progress-track"><div id="pl-progress-fill" class="progress-fill"></div></div>
@@ -410,6 +421,7 @@
 
   <!-- ===== MINUS GAME ===== -->
   <div id="mi-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="MI.endEarly()">Ende</button></div>
     <header><h1>Minus</h1>
       <div class="score-bar"><span id="mi-score-text">0 / 0</span>
         <div class="progress-track"><div id="mi-progress-fill" class="progress-fill"></div></div>
@@ -475,6 +487,7 @@
 
   <!-- ===== RECHTSCHREIBUNG GAME ===== -->
   <div id="rs-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="RS.endEarly()">Ende</button></div>
     <header><h1>Rechtschreibung</h1>
       <div class="score-bar"><span id="rs-score-text">0 / 0</span>
         <div class="progress-track"><div id="rs-progress-fill" class="progress-fill"></div></div>
@@ -540,6 +553,7 @@
 
   <!-- ===== ENGLISCH GAME ===== -->
   <div id="en-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="EN.endEarly()">Ende</button></div>
     <header><h1>Englisch</h1>
       <div class="score-bar"><span id="en-score-text">0 / 0</span>
         <div class="progress-track"><div id="en-progress-fill" class="progress-fill"></div></div>
@@ -581,8 +595,8 @@
       <button class="back-btn" onclick="APP.goTo('parent-dashboard')">Zurück</button>
     </div>
     <h1 class="section-title">Englisch-Wörter</h1>
-    <div class="pd-box">
-      <h3 class="stats-h">Neues Wort hinzufügen</h3>
+    <div class="pd-box" id="enw-form">
+      <h3 class="stats-h" id="enw-form-title">Neues Wort hinzufügen</h3>
       <label class="form-label" for="enw-de">Deutsch</label>
       <input type="text" id="enw-de" class="form-input" autocomplete="off" placeholder="z.B. riechen">
       <label class="form-label" for="enw-en">Englisch</label>
@@ -592,7 +606,8 @@
       <input type="text" id="enw-sentence" class="form-input" autocomplete="off"
              autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="z.B. Dogs smell everything.">
       <p id="enw-msg" class="form-msg"></p>
-      <button class="small-btn" onclick="EN.addWord()">Wort hinzufügen</button>
+      <button class="small-btn" id="enw-submit-btn" onclick="EN.addWord()">Wort hinzufügen</button>
+      <button class="small-btn small-btn-secondary hidden" id="enw-cancel-btn" onclick="EN.cancelEditWord()">Abbrechen</button>
       <p class="form-hint">Die falschen Schreibweisen erzeugt die App automatisch. Ohne Beispielsatz kommt das Wort in der Übung "Welcher Satz?" nicht vor.</p>
     </div>
     <div id="enw-list" class="admin-list"></div>

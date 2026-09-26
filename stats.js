@@ -73,6 +73,17 @@ var STATS = (function () {
         if (e.word && e.word.correct) return e.word.correct;
         return String(e.word || e);
       }
+    },
+    {
+      key: 'english', label: 'Englisch',
+      historyKey: 'english_history', errorsKey: 'english_errors',
+      countField: 'totalWords',
+      wrongField: 'wrongWords',
+      describeWrong: function (w) {
+        if (w && w.word) return String(w.word);
+        return String(w);
+      },
+      errorLabel: function (e) { return String((e && e.word) || e); }
     }
   ];
 
@@ -80,6 +91,11 @@ var STATS = (function () {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
+  // Letzter geladener Datensatz + aktueller Spiel-Filter, damit ein Klick auf
+  // einen Filter-Button nicht jedes Mal neu aus Firebase laden muss.
+  var lastData = null;
+  var currentFilter = 'all';
 
   // "25.09.2026, 20:14" -> Date  (Format der Spiele)
   function parseDate(ds) {
@@ -107,23 +123,50 @@ var STATS = (function () {
     }
 
     ref.once('value', function (snap) {
-      var data = snap.val() || {};
-      box.innerHTML = buildHtml(data);
+      lastData = snap.val() || {};
+      currentFilter = 'all';
+      renderFiltered();
     }, function () {
       box.innerHTML = '<p class="stats-loading">Statistiken konnten nicht geladen werden.</p>';
     });
   }
 
-  function buildHtml(data) {
+  // Zeichnet die Filter-Leiste + die (ggf. gefilterte) Statistik aus lastData
+  // neu — ohne erneut aus Firebase zu laden.
+  function renderFiltered() {
+    var box = document.getElementById('pd-stats');
+    if (!box || !lastData) return;
+    box.innerHTML = filterBarHtml() + buildHtml(lastData, currentFilter);
+  }
+
+  function setFilter(key) {
+    currentFilter = key || 'all';
+    renderFiltered();
+  }
+
+  function filterBarHtml() {
+    var items = [{ key: 'all', label: 'Alle' }];
+    for (var i = 0; i < GAMES.length; i++) items.push({ key: GAMES[i].key, label: GAMES[i].label });
+    var html = '<div class="stats-filter-bar">';
+    for (var j = 0; j < items.length; j++) {
+      var active = (currentFilter === items[j].key) ? ' stats-filter-active' : '';
+      html += '<button class="stats-filter-btn' + active + '" onclick="STATS.setFilter(\'' + items[j].key + '\')">' +
+              esc(items[j].label) + '</button>';
+    }
+    return html + '</div>';
+  }
+
+  function buildHtml(data, filterKey) {
     var gd = data.gameData || {};
     var html = '';
+    var activeGames = (!filterKey || filterKey === 'all') ? GAMES : GAMES.filter(function (g) { return g.key === filterKey; });
 
     // --- Überblick ---
     var totalSessions = 0, totalTasks = 0, pctSum = 0, pctCount = 0, lastPlayed = null;
     var perGame = [];
 
-    for (var i = 0; i < GAMES.length; i++) {
-      var g = GAMES[i];
+    for (var i = 0; i < activeGames.length; i++) {
+      var g = activeGames[i];
       var hist = gd[g.historyKey];
       if (!Array.isArray(hist)) hist = [];
       var tasks = 0, pSum = 0, pN = 0, last = null;
@@ -184,7 +227,7 @@ var STATS = (function () {
     html += developmentHtml(perGame);
 
     // --- Was muss mehr geübt werden ---
-    html += practiceHtml(gd);
+    html += practiceHtml(gd, activeGames);
 
     // --- Verlauf (letzte Spiele im Detail) ---
     html += recentHtml(perGame);
@@ -259,12 +302,12 @@ var STATS = (function () {
 
   // Was muss mehr geübt werden: gewichtete Fehlerlisten pro Spiel.
   // Gleiche Gewichtung wie in den Spielen: neuere Spiele zählen mehr.
-  function practiceHtml(gd) {
+  function practiceHtml(gd, games) {
     var html = '<div class="stats-section"><h3 class="stats-h">Was muss mehr geübt werden</h3>';
     var any = false;
 
-    for (var i = 0; i < GAMES.length; i++) {
-      var g = GAMES[i];
+    for (var i = 0; i < games.length; i++) {
+      var g = games[i];
       var all = gd[g.errorsKey];
       if (!Array.isArray(all) || all.length === 0) continue;
 
@@ -383,5 +426,5 @@ var STATS = (function () {
     return m + 'min ' + (s < 10 ? '0' : '') + s + 's';
   }
 
-  return { render: render, GAMES: GAMES };
+  return { render: render, setFilter: setFilter, GAMES: GAMES };
 })();

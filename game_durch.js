@@ -21,7 +21,7 @@ var DR = (function() {
   // Game state
   var tasks = [], TOTAL = 0, queue = [];
   var correctCount = 0, wrongCount = 0, questionNumber = 0, answeredSinceBreak = 0;
-  var currentInput = '', locked = false, gameStartTime = 0;
+  var currentInput = '', locked = false, gameStartTime = 0, gameEnded = false;
   var gameErrors = {};
   var breakTimerInterval = null, wakeLock = null;
 
@@ -150,7 +150,7 @@ var DR = (function() {
   function startGame() {
     tasks = buildTasks(); if (tasks.length === 0) return;
     TOTAL = tasks.length; correctCount = 0; wrongCount = 0; questionNumber = 0; answeredSinceBreak = 0;
-    currentInput = ''; locked = false; gameErrors = {}; gameStartTime = Date.now();
+    currentInput = ''; locked = false; gameErrors = {}; gameStartTime = Date.now(); gameEnded = false;
 
     document.getElementById('dr-start-screen').classList.add('hidden');
     document.getElementById('dr-game-screen').classList.remove('hidden');
@@ -192,6 +192,18 @@ var DR = (function() {
     document.getElementById('dr-start-screen').classList.remove('hidden');
     initStart();
     APP.updatePointsDisplays();
+  }
+
+  // === Ende (vorzeitig beenden) ===
+  function endEarly() {
+    if (gameEnded) return;
+    if (correctCount + wrongCount === 0) { backToStart(); return; }
+    if (breakTimerInterval) { clearInterval(breakTimerInterval); breakTimerInterval = null; }
+    if (breakScreen) breakScreen.classList.add('hidden');
+    document.getElementById('dr-scene').classList.remove('hidden');
+    TOTAL = correctCount + wrongCount;
+    queue = [];
+    showEnd();
   }
 
   // === Score ===
@@ -309,6 +321,8 @@ var DR = (function() {
 
   // === Show End ===
   function showEnd() {
+    if (gameEnded) return;
+    gameEnded = true;
     questionArea.classList.add('hidden');
     var dur = (Date.now() - gameStartTime) / 1000;
     var avgTime = TOTAL > 0 ? dur / TOTAL : 0;
@@ -357,6 +371,7 @@ var DR = (function() {
     numpad: numpad,
     skipBreak: skipBreak,
     backToStart: backToStart,
+    endEarly: endEarly,
     toggleHistory: toggleHistory,
     initStart: initStart
   };

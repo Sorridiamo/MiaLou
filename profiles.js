@@ -533,6 +533,47 @@ var PROFILES = (function () {
     });
   }
 
+  // === Geschenk senden (Eltern/Admin) ===
+  // Anders als giftPoints(): die Punkte werden NICHT sofort gutgeschrieben,
+  // sondern als "pendingGift" gespeichert. Das Kind sieht auf dem Home-Screen
+  // ein Geschenk-Symbol und muss erst antippen, damit die Punkte in den
+  // Gesamtstand wandern (siehe APP.claimGift()).
+  function sendGift(profileId, amount, done) {
+    amount = parseInt(amount, 10);
+    if (!amount || amount < 1) { if (done) done(false, 'Bitte eine Zahl grösser als 0 eingeben.'); return; }
+
+    var localTotal = APP.addPendingGiftTo ? APP.addPendingGiftTo(profileId, amount) : null;
+
+    var ref = rootRef('profiles/' + profileId + '/pendingGift');
+    if (!ref) {
+      if (done) done(true, 'Nur auf diesem Gerät gespeichert (keine Cloud-Verbindung).', localTotal);
+      return;
+    }
+
+    var finished = false;
+    function finish(ok, msg, total) {
+      if (finished) return;
+      finished = true;
+      if (done) done(ok, msg, total);
+    }
+    var timer = setTimeout(function () {
+      noteDbError('Geschenk schreiben', { code: 'timeout', message: 'Keine Antwort nach 4 Sekunden.' });
+      finish(true, 'Nur auf diesem Gerät gespeichert (Cloud antwortet nicht).', localTotal);
+    }, 4000);
+
+    ref.transaction(function (current) {
+      return (typeof current === 'number' ? current : 0) + amount;
+    }, function (err, committed, snap) {
+      clearTimeout(timer);
+      if (err || !committed) {
+        noteDbError('Geschenk schreiben', err || { code: 'not-committed', message: 'Schreibvorgang abgewiesen.' });
+        finish(true, 'Nur auf diesem Gerät gespeichert (Cloud verweigert den Zugriff).', localTotal);
+        return;
+      }
+      finish(true, '', snap ? snap.val() : localTotal);
+    });
+  }
+
   // === Migration: altes 'default'-Profil in ein echtes Kinderprofil ===
   // Wird genau einmal ausgeführt, wenn es noch keine Profile gibt, aber
   // unter 'profiles/default' bereits Punkte/Sticker liegen.
@@ -883,19 +924,19 @@ var PROFILES = (function () {
   function submitGift() {
     if (!parentContextId) return;
     var amount = (document.getElementById('pd-gift-amount') || {}).value || '';
-    giftPoints(parentContextId, amount, function (ok, err, newTotal) {
+    sendGift(parentContextId, amount, function (ok, err, newPending) {
       if (ok) {
         // err ist hier kein Fehler, sondern ggf. ein Hinweis ("nur lokal").
-        var txt = 'Geschenkt! Neuer Stand: ' + newTotal + ' Punkte.';
+        var txt = 'Geschenkt! Das Kind sieht jetzt ein Geschenk-Symbol (wartet: ' + newPending + ' Punkte).';
         if (err) txt += ' Hinweis: ' + err;
         setMsg('pd-gift-msg', txt, true);
         var g = document.getElementById('pd-gift-amount'); if (g) g.value = '';
-        // Falls das Kind gerade aktiv ist, Anzeige sofort aktualisieren
+        // Falls das Kind gerade aktiv ist, Geschenk-Symbol sofort anzeigen
         if (APP.getActiveProfileId && APP.getActiveProfileId() === parentContextId) {
           APP.updatePointsDisplays();
         }
       } else {
-        setMsg('pd-gift-msg', err || 'Punkte konnten nicht gutgeschrieben werden.');
+        setMsg('pd-gift-msg', err || 'Geschenk konnte nicht gespeichert werden.');
       }
     });
   }

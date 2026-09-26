@@ -21,8 +21,8 @@
 }
 
 /* Modus "Selbst schreiben" */
-.en-type-wrap { display: flex; flex-direction: column; gap: 10px; align-items: stretch; width: 100%; }
-.en-type-input { font-size: 22px; text-align: center; }
+.en-type-wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%; }
+.en-type-input { font-size: 22px; text-align: center; margin: 0 auto; }
 .en-type-input.en-type-ok { border-color: #7ec88b; background: #f2fbf4; }
 .en-type-input.en-type-bad { border-color: #e08080; background: #fdf3f1; }
 
@@ -130,6 +130,13 @@
   width: 100%; max-width: 360px;
 }
 
+/* Eltern-Login: Kind-Auswahl, Labels und Passwortfeld mittig statt linksbündig */
+#parent-login-screen { align-items: center; }
+#parent-login-screen .form-label { text-align: center; margin-left: auto; margin-right: auto; }
+#parent-login-screen #pl-children { margin: 0 auto; justify-content: center; }
+#parent-login-screen #pl-pin { margin: 0 auto; }
+
+
 .small-btn {
   font-size: 14px; font-weight: 700; padding: 10px 18px;
   border: none; border-radius: 12px; background: #e8a960; color: #fff;
@@ -137,17 +144,20 @@
 }
 .small-btn:active { transform: scale(0.96); }
 .small-btn-danger { background: #d4674a; }
+.small-btn-secondary { background: #d4cbbf; color: #5b4a3f; }
 
 /* --- Home: Profil-Leiste --- */
 .home-profile-bar {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
   width: 100%; max-width: 400px;
-  background: #fffdf8; border-radius: 14px; padding: 8px 12px;
+  background: #fffdf8; border-radius: 14px; padding: 10px 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
+.home-profile-top { display: flex; align-items: center; gap: 10px; }
+.home-profile-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .home-profile-avatar {
   width: 38px; height: 38px; border-radius: 10px; object-fit: contain;
-  background: #f0ece3;
+  background: #f0ece3; flex-shrink: 0;
 }
 /* Das eigene Bild ist antippbar (führt zur Bildauswahl) */
 .home-profile-avatar-btn {
@@ -157,8 +167,8 @@
 }
 .home-profile-avatar-btn:active { transform: scale(0.92); border-color: #e8a960; }
 .home-profile-name {
-  font-size: 16px; font-weight: 700; color: #5b4a3f; flex: 1; text-align: left;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 17px; font-weight: 700; color: #5b4a3f; flex: 1; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: normal; line-height: 1.2;
 }
 .switch-btn {
   font-size: 13px; font-weight: 600; padding: 6px 12px;
@@ -181,6 +191,8 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .admin-row .small-btn { padding: 7px 12px; font-size: 13px; }
+.admin-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.enw-edited-tag { font-size: 11px; font-weight: 600; color: #8a7a6c; }
 
 .admin-pin-box {
   margin-top: 20px; padding-top: 18px; border-top: 2px solid #e4dccf;
@@ -199,6 +211,20 @@
 }
 .pd-gift-row { display: flex; gap: 8px; align-items: center; width: 100%; justify-content: center; }
 .pd-stats { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; }
+
+/* --- Statistik-Filter (pro Spiel) --- */
+.stats-filter-bar {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  width: 100%; max-width: 440px;
+}
+.stats-filter-btn {
+  font-size: 13px; font-weight: 600; padding: 7px 12px;
+  border: 2px solid #d4cbbf; border-radius: 10px;
+  background: #fffdf8; color: #5b4a3f; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.stats-filter-btn:active { transform: scale(0.96); }
+.stats-filter-active { background: #e8a960; border-color: #e8a960; color: #fff; }
 
 /* --- Statistiken --- */
 .stats-section {
@@ -281,8 +307,7 @@
 @media (max-width: 380px) {
   .avatar-grid { grid-template-columns: repeat(4, 1fr); }
   .stats-tiles { grid-template-columns: repeat(2, 1fr); }
-  /* Drei Knöpfe plus Name werden sonst zu eng */
   .home-profile-bar { gap: 6px; padding: 8px; }
-  .home-profile-name { font-size: 14px; }
+  .home-profile-name { font-size: 15px; }
   .switch-btn { font-size: 12px; padding: 6px 8px; }
 }

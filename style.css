@@ -34,6 +34,25 @@ body {
 .points-bar { font-size: 16px; font-weight: 700; color: #5b4a3f; background: #fffdf8; padding: 10px 20px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); width: 100%; max-width: 360px; text-align: center; }
 .points-bar-sm { font-size: 13px; font-weight: 700; color: #5b4a3f; background: #fffdf8; padding: 6px 14px; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); white-space: nowrap; }
 
+/* --- Geschenk-Symbol: erscheint, wenn Eltern Punkte geschenkt haben --- */
+.gift-icon-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 100%; max-width: 360px; margin-top: 6px; padding: 10px 14px;
+  background: linear-gradient(180deg, #fff3d6, #ffe6b0); border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: giftPulse 1.4s ease-in-out infinite;
+}
+.gift-icon-wrap:active { transform: scale(0.95); }
+.gift-icon-emoji { font-size: 34px; line-height: 1; }
+.gift-icon-label { font-size: 13px; font-weight: 700; color: #8a5a20; text-align: center; }
+.gift-icon-opened { animation: none; background: linear-gradient(180deg, #d4e8d0, #b8dca0); cursor: default; }
+@keyframes giftPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+
 .home-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; }
 .home-btn { font-size: 20px; font-weight: 700; padding: 16px 0; border: none; border-radius: 16px; color: #fff; cursor: pointer; transition: transform 0.15s ease; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
 .home-btn:active { transform: scale(0.96); }
@@ -47,8 +66,10 @@ body {
 
 /* === TOPBAR === */
 .game-topbar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 440px; gap: 8px; }
+.game-topbar-end { justify-content: flex-end; }
 .back-btn { font-size: 15px; font-weight: 600; padding: 8px 16px; border: 2px solid #d4cbbf; border-radius: 12px; background: #fffdf8; color: #5b4a3f; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .back-btn:active { transform: scale(0.96); background: #f0ece3; }
+.end-btn { border-color: #e8b0a0; color: #a05040; }
 
 .section-title { font-size: 26px; font-weight: 700; color: #5b4a3f; }
 
@@ -155,9 +176,9 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 .eval-label { font-size: 14px; font-weight: 600; color: #7a6b5d; margin-bottom: 8px; }
 .row-eval { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; max-width: 320px; margin: 0 auto 10px; }
 .row-eval-box { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; font-weight: 700; color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
-.cat-eval { display: flex; justify-content: center; gap: 12px; max-width: 320px; margin: 0 auto 10px; }
-.cat-eval-box { flex: 1; padding: 14px 8px; border-radius: 14px; text-align: center; color: #fff; font-weight: 700; font-size: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 4px; }
-.cat-eval-box .cat-eval-label { font-size: 13px; font-weight: 600; opacity: 0.9; }
+.cat-eval { display: flex; justify-content: center; align-items: stretch; gap: 12px; max-width: 320px; margin: 0 auto 10px; }
+.cat-eval-box { flex: 1 1 0; min-width: 0; padding: 14px 8px; border-radius: 14px; text-align: center; color: #fff; font-weight: 700; font-size: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.cat-eval-box .cat-eval-label { font-size: 12px; font-weight: 600; opacity: 0.9; line-height: 1.25; overflow-wrap: break-word; }
 .cat-eval-box .cat-eval-pct { font-size: 22px; font-weight: 800; }
 .end-legend { display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; font-size: 12px; color: #7a6b5d; }
 .legend-item { display: flex; align-items: center; gap: 4px; }

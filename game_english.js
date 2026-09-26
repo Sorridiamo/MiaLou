@@ -20,19 +20,32 @@ var EN = (function () {
   // 'long: true' = ganzer Satzbaustein. Solche Einträge werden im Schreib-
   // und im Schreibweisen-Modus übersprungen (zu lang zum Tippen).
   var BUILTIN = [
-    { de: 'sehen',            en: 'see',    sentence: 'I can see you.' },
-    { de: 'hören',            en: 'hear',   sentence: 'I can hear music.' },
-    { de: 'riechen',          en: 'smell',  sentence: 'Dogs smell everything.' },
-    { de: 'schmecken',        en: 'taste',  sentence: 'It tastes sweet.' },
-    { de: 'fühlen, spüren',   en: 'feel',   sentence: 'It feels warm.' },
-    { de: 'berühren',         en: 'touch',  sentence: 'Touch your arm.' },
-    { de: 'Sinn',             en: 'sense',  sentence: 'We have got five senses.' },
-    { de: 'hart',             en: 'hard',   sentence: 'I like hard cheese.' },
-    { de: 'weich',            en: 'soft',   sentence: 'My teddy is soft.' },
-    { de: 'bitter',           en: 'bitter', sentence: 'It tastes bitter.' },
-    { de: 'sauer',            en: 'sour',   sentence: 'Lemons taste sour.' },
-    { de: 'Ich mag … , weil …',       en: 'I like … because …',       sentence: 'I like chocolate because it tastes sweet.', long: true },
-    { de: 'Ich mag … nicht, weil …',  en: 'I don\'t like … because …', sentence: 'I don\'t like cheese because it smells bad.', long: true }
+    { de: 'sehen',            en: 'see',    sentence: 'I can see you.',
+      wrongSentences: ['I can see with my ears.', 'Fish can see with their nose.'] },
+    { de: 'hören',            en: 'hear',   sentence: 'I can hear music.',
+      wrongSentences: ['I can hear with my eyes.', 'The picture can hear a song.'] },
+    { de: 'riechen',          en: 'smell',  sentence: 'Dogs smell everything.',
+      wrongSentences: ['The chair can smell the cake.', 'I smell with my ears.'] },
+    { de: 'schmecken',        en: 'taste',  sentence: 'It tastes sweet.',
+      wrongSentences: ['The chair tastes sweet.', 'My shoe tastes sweet.'] },
+    { de: 'fühlen, spüren',   en: 'feel',   sentence: 'It feels warm.',
+      wrongSentences: ['The picture feels loud.', 'The number feels salty.'] },
+    { de: 'berühren',         en: 'touch',  sentence: 'Touch your arm.',
+      wrongSentences: ['Touch the sound.', 'Touch the smell.'] },
+    { de: 'Sinn',             en: 'sense',  sentence: 'We have got five senses.',
+      wrongSentences: ['The table has got five senses.', 'We have got five noses.'] },
+    { de: 'hart',             en: 'hard',   sentence: 'I like hard cheese.',
+      wrongSentences: ['The cloud is hard.', 'The water is hard as air.'] },
+    { de: 'weich',            en: 'soft',   sentence: 'My teddy is soft.',
+      wrongSentences: ['The sun is soft.', 'The rock is soft.'] },
+    { de: 'bitter',           en: 'bitter', sentence: 'It tastes bitter.',
+      wrongSentences: ['The sugar tastes bitter.', 'The candy tastes bitter.'] },
+    { de: 'sauer',            en: 'sour',   sentence: 'Lemons taste sour.',
+      wrongSentences: ['Sugar tastes sour.', 'Honey tastes sour.'] },
+    { de: 'Ich mag … , weil …',       en: 'I like … because …',       sentence: 'I like chocolate because it tastes sweet.', long: true,
+      wrongSentences: ['I like chocolate because it tastes bitter.', 'I like broccoli because it smells bad.'] },
+    { de: 'Ich mag … nicht, weil …',  en: 'I don\'t like … because …', sentence: 'I don\'t like cheese because it smells bad.', long: true,
+      wrongSentences: ['I don\'t like cheese because it tastes sweet.', 'I don\'t like ice cream because it tastes bad.'] }
   ];
 
   var MODES = [
@@ -72,13 +85,17 @@ var EN = (function () {
   var confettiColors = ['#f5b0c0','#f5d98e','#b8d8a3','#a8d4e6','#d8b4f0','#f0b880','#7ec88b','#e88080'];
   var emojiMap = { sparkles:'✨', star:'⭐', heart:'❤️', party:'🎉', tada:'🎊' };
 
-  // Overlay der Eltern: eigene Wörter + ausgeblendete Wörter
-  var overlay = { custom: [], hidden: [] };
+  // Overlay der Eltern: eigene Wörter + ausgeblendete Wörter + Bearbeitungen
+  // an eingebauten Wörtern (edits, additiv — siehe getEdit()).
+  var overlay = { custom: [], hidden: [], edits: {} };
   var overlayLoaded = false;
+  // Wenn ein eingebautes Wort gerade bearbeitet wird: dessen Original-en (normKey).
+  // null = das Formular fügt ein neues eigenes Wort hinzu.
+  var editingKey = null;
 
   var tasks = [], TOTAL = 0, queue = [];
   var correctCount = 0, wrongCount = 0, questionNumber = 0, answeredSinceBreak = 0;
-  var locked = false, gameStartTime = 0;
+  var locked = false, gameStartTime = 0, gameEnded = false;
   var gameErrors = {}, modeStats = {};
   var breakTimerInterval = null, wakeLock = null;
   var selectedMode = 'mix', selectedCount = 20;
@@ -105,7 +122,7 @@ var EN = (function () {
       if (!raw) return null;
       var o = JSON.parse(raw);
       if (!o || typeof o !== 'object') return null;
-      return { custom: o.custom || [], hidden: o.hidden || [] };
+      return { custom: o.custom || [], hidden: o.hidden || [], edits: o.edits || {} };
     } catch (e) { return null; }
   }
 
@@ -139,7 +156,7 @@ var EN = (function () {
       clearTimeout(timer);
       var v = snap && snap.val();
       if (v && typeof v === 'object') {
-        overlay = { custom: v.custom || [], hidden: v.hidden || [] };
+        overlay = { custom: v.custom || [], hidden: v.hidden || [], edits: v.edits || {} };
         writeOverlayLocal();
       }
       finish();
@@ -168,19 +185,41 @@ var EN = (function () {
 
   function isHidden(en) { return overlay.hidden.indexOf(normKey(en)) >= 0; }
 
-  // Die aktive Wortliste: eingebaute Wörter (ohne ausgeblendete) + eigene.
+  // Die aktive Wortliste: eingebaute Wörter (ohne ausgeblendete, mit evtl.
+  // Bearbeitungen) + eigene.
   function getWords() {
     var out = [], i;
     for (i = 0; i < BUILTIN.length; i++) {
-      if (!isHidden(BUILTIN[i].en)) out.push(BUILTIN[i]);
+      var b = BUILTIN[i];
+      if (isHidden(b.en)) continue;
+      var ed = getEdit(b.en);
+      if (ed) {
+        out.push({
+          de: ed.de || b.de, en: ed.en || b.en,
+          sentence: ed.sentence || b.sentence,
+          wrongSentences: (ed.wrongSentences && ed.wrongSentences.length >= 2) ? ed.wrongSentences : b.wrongSentences,
+          long: typeof ed.long === 'boolean' ? ed.long : b.long,
+          builtinKey: b.en
+        });
+      } else {
+        out.push(b);
+      }
     }
     for (i = 0; i < overlay.custom.length; i++) {
       var c = overlay.custom[i];
       if (c && c.de && c.en && !isHidden(c.en)) {
-        out.push({ de: c.de, en: c.en, sentence: c.sentence || '', long: !!c.long, custom: true });
+        out.push({ de: c.de, en: c.en, sentence: c.sentence || '', wrongSentences: c.wrongSentences || [], long: !!c.long, custom: true });
       }
     }
     return out;
+  }
+
+  // Bearbeitungen an eingebauten Wörtern: overlay.edits ist eine Map
+  // { <ursprüngliches en>: { de, en, sentence, wrongSentences, long } }.
+  // Die BUILTIN-Liste selbst bleibt dabei unverändert (Datensicherheit bei Updates).
+  function getEdit(originalEn) {
+    var edits = overlay.edits || {};
+    return edits[normKey(originalEn)] || null;
   }
 
   // =====================================================================
@@ -295,12 +334,17 @@ var EN = (function () {
     }
     if (mode === 'sent') {
       if (!word.sentence) return null;
-      var sOthers = pickOthers(pool, word, 2, 'sentence');
-      if (sOthers.length < 2) return null;
+      var decoys = (word.wrongSentences || []).filter(function (s) { return s && s !== word.sentence; });
+      if (decoys.length < 2) {
+        var sOthers = pickOthers(pool, word, 2 - decoys.length, 'sentence');
+        decoys = decoys.concat(sOthers);
+      }
+      if (decoys.length < 2) return null;
+      shuffleArray(decoys);
       return {
         mode: mode, word: word,
         prompt: word.en, promptLabel: 'In welchem Satz kommt das Wort richtig vor?',
-        options: shuffleArray([word.sentence, sOthers[0], sOthers[1]]),
+        options: shuffleArray([word.sentence, decoys[0], decoys[1]]),
         answer: word.sentence,
         explain: 'Richtig ist: ' + word.sentence
       };
@@ -480,7 +524,7 @@ var EN = (function () {
 
     TOTAL = tasks.length;
     correctCount = 0; wrongCount = 0; questionNumber = 0; answeredSinceBreak = 0;
-    locked = false; gameErrors = {}; modeStats = {}; gameStartTime = Date.now();
+    locked = false; gameErrors = {}; modeStats = {}; gameStartTime = Date.now(); gameEnded = false;
 
     document.getElementById('en-start-screen').classList.add('hidden');
     document.getElementById('en-game-screen').classList.remove('hidden');
@@ -505,6 +549,18 @@ var EN = (function () {
     document.getElementById('en-start-screen').classList.remove('hidden');
     initStart();
     APP.updatePointsDisplays();
+  }
+
+  // === Ende (vorzeitig beenden) ===
+  function endEarly() {
+    if (gameEnded) return;
+    if (correctCount + wrongCount === 0) { backToStart(); return; }
+    if (breakTimerInterval) { clearInterval(breakTimerInterval); breakTimerInterval = null; }
+    if (breakScreen) breakScreen.classList.add('hidden');
+    document.getElementById('en-scene').classList.remove('hidden');
+    TOTAL = correctCount + wrongCount;
+    queue = [];
+    showEnd();
   }
 
   function updateScore() {
@@ -688,6 +744,8 @@ var EN = (function () {
   }
 
   function showEnd() {
+    if (gameEnded) return;
+    gameEnded = true;
     questionArea.classList.add('hidden');
     var dur = (Date.now() - gameStartTime) / 1000, avgTime = TOTAL > 0 ? dur / TOTAL : 0;
     saveGameErrors();
@@ -751,10 +809,53 @@ var EN = (function () {
 
   function initWords() {
     setWordsMsg('');
+    editingKey = null;
     var a = document.getElementById('enw-de'), b = document.getElementById('enw-en'), c = document.getElementById('enw-sentence');
     if (a) a.value = ''; if (b) b.value = ''; if (c) c.value = '';
+    updateWordFormMode();
     renderWordList();
     loadOverlay(function () { renderWordList(); });
+  }
+
+  // Formular-Überschrift/Button je nachdem ob neu hinzugefügt oder bearbeitet wird.
+  function updateWordFormMode() {
+    var title = document.getElementById('enw-form-title');
+    var btn = document.getElementById('enw-submit-btn');
+    var cancelBtn = document.getElementById('enw-cancel-btn');
+    if (editingKey) {
+      if (title) title.textContent = 'Wort bearbeiten';
+      if (btn) btn.textContent = 'Änderungen speichern';
+      if (cancelBtn) cancelBtn.classList.remove('hidden');
+    } else {
+      if (title) title.textContent = 'Neues Wort hinzufügen';
+      if (btn) btn.textContent = 'Wort hinzufügen';
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+    }
+  }
+
+  function startEditWord(enKey) {
+    var pool = getWords(), w = null, i;
+    for (i = 0; i < pool.length; i++) {
+      if (normKey(pool[i].builtinKey || pool[i].en) === enKey) { w = pool[i]; break; }
+    }
+    if (!w) return;
+    editingKey = enKey;
+    var deEl = document.getElementById('enw-de'), enEl = document.getElementById('enw-en'), stEl = document.getElementById('enw-sentence');
+    if (deEl) deEl.value = w.de || '';
+    if (enEl) enEl.value = w.en || '';
+    if (stEl) stEl.value = w.sentence || '';
+    setWordsMsg('');
+    updateWordFormMode();
+    var form = document.getElementById('enw-form');
+    if (form && form.scrollIntoView) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function cancelEditWord() {
+    editingKey = null;
+    var a = document.getElementById('enw-de'), b = document.getElementById('enw-en'), c = document.getElementById('enw-sentence');
+    if (a) a.value = ''; if (b) b.value = ''; if (c) c.value = '';
+    setWordsMsg('');
+    updateWordFormMode();
   }
 
   function renderWordList() {
@@ -781,9 +882,14 @@ var EN = (function () {
 
     html += '<h3 class="stats-h">Eingebaute Wörter (' + visible.length + ')</h3>';
     for (i = 0; i < visible.length; i++) {
-      html += '<div class="admin-row"><span class="admin-name">' + esc(visible[i].de) + ' — <strong>' + esc(visible[i].en) + '</strong>' +
-        (visible[i].sentence ? '<br><span class="enw-sentence">' + esc(visible[i].sentence) + '</span>' : '') + '</span>' +
-        '<button class="small-btn" onclick="EN.hideWord(\'' + esc(normKey(visible[i].en)) + '\')">Ausblenden</button></div>';
+      var vb = visible[i], ved = getEdit(vb.en), vShow = ved ? { de: ved.de || vb.de, en: ved.en || vb.en, sentence: ved.sentence || vb.sentence } : vb;
+      html += '<div class="admin-row"><span class="admin-name">' + esc(vShow.de) + ' — <strong>' + esc(vShow.en) + '</strong>' +
+        (ved ? ' <span class="enw-edited-tag">(bearbeitet)</span>' : '') +
+        (vShow.sentence ? '<br><span class="enw-sentence">' + esc(vShow.sentence) + '</span>' : '') + '</span>' +
+        '<span class="admin-row-actions">' +
+        '<button class="small-btn" onclick="EN.startEditWord(\'' + esc(normKey(vb.en)) + '\')">Bearbeiten</button>' +
+        '<button class="small-btn" onclick="EN.hideWord(\'' + esc(normKey(vb.en)) + '\')">Ausblenden</button>' +
+        '</span></div>';
     }
 
     if (hiddenList.length > 0) {
@@ -803,6 +909,8 @@ var EN = (function () {
     if (!de) { setWordsMsg('Bitte das deutsche Wort eintragen.'); return; }
     if (!en) { setWordsMsg('Bitte das englische Wort eintragen.'); return; }
 
+    if (editingKey) { saveEditedWord(de, en, st); return; }
+
     // Schon vorhanden? (eingebaut oder eigen)
     var i;
     for (i = 0; i < overlay.custom.length; i++) {
@@ -821,6 +929,26 @@ var EN = (function () {
     renderWordList();
     saveOverlay(function (hint) {
       setWordsMsg(hint ? ('Hinzugefügt. Hinweis: ' + hint) : 'Hinzugefügt!', true);
+    });
+  }
+
+  // Speichert eine Bearbeitung an einem eingebauten Wort additiv in overlay.edits,
+  // ohne BUILTIN selbst anzufassen (Original bleibt bei App-Updates erhalten).
+  function saveEditedWord(de, en, st) {
+    var deEl = document.getElementById('enw-de'), enEl = document.getElementById('enw-en'), stEl = document.getElementById('enw-sentence');
+    var key = editingKey;
+    var existing = overlay.edits[key] || {};
+    overlay.edits[key] = {
+      de: de, en: en, sentence: st,
+      wrongSentences: existing.wrongSentences || [],
+      long: (en.indexOf(' ') >= 0 && en.split(' ').length > 2)
+    };
+    editingKey = null;
+    if (deEl) deEl.value = ''; if (enEl) enEl.value = ''; if (stEl) stEl.value = '';
+    updateWordFormMode();
+    renderWordList();
+    saveOverlay(function (hint) {
+      setWordsMsg(hint ? ('Gespeichert. Hinweis: ' + hint) : 'Gespeichert!', true);
     });
   }
 
@@ -858,6 +986,7 @@ var EN = (function () {
     selectCount: selectCount,
     startGame: startGame,
     backToStart: backToStart,
+    endEarly: endEarly,
     chooseOption: chooseOption,
     submitTyped: submitTyped,
     typeKey: typeKey,
@@ -870,6 +999,8 @@ var EN = (function () {
     deleteCustom: deleteCustom,
     hideWord: hideWord,
     showWord: showWord,
+    startEditWord: startEditWord,
+    cancelEditWord: cancelEditWord,
     getWords: getWords
   };
 })();

@@ -44,6 +44,7 @@ var APP = (function() {
   var KEY_POINTS = 'spielkiste_points';
   var KEY_OWNED = 'spielkiste_owned_stickers';
   var KEY_PLACED = 'spielkiste_placed_stickers';
+  var KEY_PENDING_GIFT = 'spielkiste_pending_gift'; // ungeöffnetes Geschenk (Punkte von den Eltern)
 
   // === Cloud sync (Firebase Realtime Database) ===
   // Jedes Kind hat seinen eigenen Zweig 'profiles/<profileId>'.
@@ -92,6 +93,7 @@ var APP = (function() {
 
   // === State ===
   var points = 0;
+  var pendingGift = 0; // geschenkte Punkte, die das Kind noch nicht "geöffnet" hat
   var ownedStickers = []; // sticker IDs the user bought
   var placedStickers = {}; // { worldId: [{id, x, y}, ...] }
   var currentWorld = '';
@@ -107,8 +109,9 @@ var APP = (function() {
       points = parseInt(localStorage.getItem(pk(KEY_POINTS)), 10) || 0;
       ownedStickers = JSON.parse(localStorage.getItem(pk(KEY_OWNED))) || [];
       placedStickers = JSON.parse(localStorage.getItem(pk(KEY_PLACED))) || {};
+      pendingGift = parseInt(localStorage.getItem(pk(KEY_PENDING_GIFT)), 10) || 0;
     } catch(e) {
-      points = 0; ownedStickers = []; placedStickers = {};
+      points = 0; ownedStickers = []; placedStickers = {}; pendingGift = 0;
     }
   }
 
@@ -132,6 +135,7 @@ var APP = (function() {
       points = typeof data.points === 'number' ? data.points : 0;
       ownedStickers = Array.isArray(data.ownedStickers) ? data.ownedStickers : [];
       placedStickers = data.placedStickers || {};
+      pendingGift = typeof data.pendingGift === 'number' ? data.pendingGift : 0;
       suppressNextWrite = false;
 
       // Lokalen Cache aktuell halten (für Offline-Start)
@@ -139,6 +143,7 @@ var APP = (function() {
         localStorage.setItem(pk(KEY_POINTS), points);
         localStorage.setItem(pk(KEY_OWNED), JSON.stringify(ownedStickers));
         localStorage.setItem(pk(KEY_PLACED), JSON.stringify(placedStickers));
+        localStorage.setItem(pk(KEY_PENDING_GIFT), pendingGift);
       } catch(e) {}
 
       // Spieldaten (Historie + Fehlerlisten aller Spiele) in den lokalen
@@ -199,6 +204,7 @@ var APP = (function() {
       points: points,
       ownedStickers: ownedStickers,
       placedStickers: placedStickers,
+      pendingGift: pendingGift,
       gameData: collectGameData()
     });
   }
@@ -290,6 +296,63 @@ var APP = (function() {
       var el = document.getElementById(ids[i]);
       if (el) el.textContent = txt;
     }
+    updateGiftDisplay();
+  }
+
+  // Zeigt/versteckt das Geschenk-Symbol auf dem Home-Screen je nachdem, ob
+  // ein ungeöffnetes Geschenk vorliegt. Getrennt von updatePointsDisplays(),
+  // damit claimGift() die "+X Punkte"-Anzeige nicht sofort wieder überschreibt.
+  function updateGiftDisplay() {
+    var giftEl = document.getElementById('home-gift');
+    if (!giftEl) return;
+    if (pendingGift > 0) {
+      var label = giftEl.querySelector('.gift-icon-label');
+      if (label) label.textContent = 'Ein Geschenk wartet auf dich! Tippen zum Öffnen.';
+      giftEl.classList.remove('gift-icon-opened');
+      giftEl.classList.remove('hidden');
+    } else {
+      giftEl.classList.add('hidden');
+    }
+  }
+
+  function getPendingGift() { return pendingGift; }
+
+  // Kind tippt auf das Geschenk-Symbol: Betrag wird kurz angezeigt und dann
+  // dem Punktestand gutgeschrieben. Danach verschwindet das Symbol wieder.
+  function claimGift() {
+    if (pendingGift <= 0) return;
+    var amount = pendingGift;
+    points += amount;
+    pendingGift = 0;
+    savePoints();
+    try {
+      localStorage.setItem(pk(KEY_PENDING_GIFT), 0);
+    } catch(e) {}
+    var ref = getDbRef();
+    if (ref && !suppressNextWrite) ref.child('pendingGift').set(0);
+
+    // Punktezahlen sofort aktualisieren (OHNE das Geschenk-Symbol zu verstecken —
+    // das übernimmt gleich der eigene Timeout, damit die Zahl kurz sichtbar bleibt).
+    var available = getPrizesAvailable();
+    var toNext = getPointsToNextPrize();
+    var txt = points + ' Punkte';
+    txt += (available > 0) ? (' — ' + available + ' Preis' + (available > 1 ? 'e' : '') + ' verfügbar!') : (' — noch ' + toNext + ' bis zum nächsten Preis');
+    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','worlds-points','shop-points'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el) el.textContent = txt;
+    }
+
+    var giftEl = document.getElementById('home-gift');
+    if (giftEl) {
+      var label = giftEl.querySelector('.gift-icon-label');
+      if (label) label.textContent = 'Geschenkt: +' + amount + ' Punkte!';
+      giftEl.classList.add('gift-icon-opened');
+      setTimeout(function () {
+        giftEl.classList.add('hidden');
+        giftEl.classList.remove('gift-icon-opened');
+      }, 1600);
+    }
   }
 
   // Punkte einem bestimmten Kind gutschreiben — auch wenn die Cloud nicht
@@ -308,6 +371,24 @@ var APP = (function() {
     if (profileId === PROFILE_ID) {
       points = next;
       updatePointsDisplays();
+    }
+    return next;
+  }
+
+  // Wie addPointsTo(), aber für ein noch nicht geöffnetes Geschenk (pendingGift)
+  // statt direkt für den Punktestand — genutzt vom neuen Geschenk-System
+  // (Punkte werden erst gutgeschrieben, wenn das Kind das Geschenk antippt).
+  // Rückgabe: der neue (lokale) Geschenk-Stand.
+  function addPendingGiftTo(profileId, amount) {
+    amount = parseInt(amount, 10) || 0;
+    var key = KEY_PENDING_GIFT + '__' + profileId;
+    var current = 0;
+    try { current = parseInt(localStorage.getItem(key), 10) || 0; } catch (e) {}
+    var next = current + amount;
+    try { localStorage.setItem(key, next); } catch (e) {}
+    if (profileId === PROFILE_ID) {
+      pendingGift = next;
+      updateGiftDisplay();
     }
     return next;
   }
@@ -687,7 +768,10 @@ var APP = (function() {
     closeInventory: closeInventory,
     addPoint: addPoint,
     addPointsTo: addPointsTo,
+    addPendingGiftTo: addPendingGiftTo,
     getPoints: getPoints,
+    getPendingGift: getPendingGift,
+    claimGift: claimGift,
     updatePointsDisplays: updatePointsDisplays,
     updateProfileHeader: updateProfileHeader,
     // Profil-Anbindung

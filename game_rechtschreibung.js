@@ -250,7 +250,7 @@ var RS = (function() {
 
   var tasks=[], TOTAL=0, queue=[];
   var correctCount=0, wrongCount=0, questionNumber=0, answeredSinceBreak=0;
-  var locked=false, gameStartTime=0;
+  var locked=false, gameStartTime=0, gameEnded=false;
   var gameErrors={}, catStats={};
   var breakTimerInterval=null, wakeLock=null;
   var selectedCategories=['tz_z','ck_k'], selectedCount=100, fastGeschafftMode=false;
@@ -367,7 +367,7 @@ var RS = (function() {
       shuffleArray(pool);var count=Math.min(selectedCount,pool.length);tasks=pool.slice(0,count);
     }
     TOTAL=tasks.length;correctCount=0;wrongCount=0;questionNumber=0;answeredSinceBreak=0;
-    locked=false;gameErrors={};catStats={};gameStartTime=Date.now();
+    locked=false;gameErrors={};catStats={};gameStartTime=Date.now();gameEnded=false;
 
     document.getElementById('rs-start-screen').classList.add('hidden');
     document.getElementById('rs-game-screen').classList.remove('hidden');
@@ -407,6 +407,18 @@ var RS = (function() {
     document.getElementById('rs-game-screen').classList.add('hidden');
     document.getElementById('rs-start-screen').classList.remove('hidden');
     initStart();APP.updatePointsDisplays();
+  }
+
+  // === Ende (vorzeitig beenden) ===
+  function endEarly(){
+    if(gameEnded) return;
+    if(correctCount+wrongCount===0){ backToStart(); return; }
+    if(breakTimerInterval){clearInterval(breakTimerInterval);breakTimerInterval=null;}
+    if(breakScreen)breakScreen.classList.add('hidden');
+    document.getElementById('rs-scene').classList.remove('hidden');
+    TOTAL=correctCount+wrongCount;
+    queue=[];
+    showEnd();
   }
 
   function updateScore(){scoreText.textContent=correctCount+' / '+TOTAL;progressFill.style.width=((correctCount/TOTAL)*100)+'%';}
@@ -513,6 +525,8 @@ var RS = (function() {
 
   // End screen
   function showEnd(){
+    if(gameEnded) return;
+    gameEnded=true;
     questionArea.classList.add('hidden');
     var dur=(Date.now()-gameStartTime)/1000,avgTime=TOTAL>0?dur/TOTAL:0;
     saveGameErrors();
@@ -563,6 +577,6 @@ var RS = (function() {
   return {
     toggleCat:toggleCat,selectCount:selectCount,selectFastGeschafft:selectFastGeschafft,
     startGame:startGame,chooseWord:chooseWord,skipBreak:skipBreak,
-    backToStart:backToStart,toggleHistory:toggleHistory,initStart:initStart
+    backToStart:backToStart,endEarly:endEarly,toggleHistory:toggleHistory,initStart:initStart
   };
 })();
