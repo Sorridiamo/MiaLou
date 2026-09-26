@@ -854,9 +854,16 @@ var APP = (function() {
       clouds: false
     },
     castle: {
-      // Schloss: Wolken über den Türmen, Schmetterlinge auf der Wiese.
-      butterflies: 2, flowers: 4, sparks: 0, petals: 0,
-      clouds: true
+      // Schloss: Wolken über den Türmen. Keine Schmetterlinge mehr — dafür
+      // schwimmen verschiedene Fische im Wassergraben (links vor dem Schloss).
+      // Die Fische bleiben streng in der Wasserzone, damit keiner auf Wiese
+      // oder Weg landet.
+      butterflies: 0, flowers: 4, sparks: 0, petals: 0,
+      clouds: true,
+      fish: 4,
+      waterZones: [
+        { leftMin: 6, leftMax: 46, topMin: 64, topMax: 75 }
+      ]
     },
     veggie: {
       // Gemüsegarten: viele grosse Blüten und Schmetterlinge über den Beeten.
@@ -1052,6 +1059,26 @@ var APP = (function() {
               'font-size:' + baSize.toFixed(0) + 'px;' +
               'animation:balloonFloat ' + baDur.toFixed(1) + 's ease-in-out ' + baDelay.toFixed(1) + 's infinite">' +
               '<span class="amb-balloon-inner">🎈</span></span>'; // 🎈
+    }
+
+    // --- Fische: schwimmen nur innerhalb der Wasserzone(n) einer Welt hin und
+    // her (z.B. im Wassergraben beim Schloss). Verschiedene Emoji-Fische für
+    // Abwechslung. Bleiben streng im Wasser, damit keiner auf der Wiese landet.
+    var fishGlyphs = ['🐟', '🐠', '🐡', '🦈']; // 🐟 🐠 🐡 🦈
+    for (i = 0; i < (cfg.fish || 0); i++) {
+      var wz = (cfg.waterZones && cfg.waterZones.length)
+        ? cfg.waterZones[i % cfg.waterZones.length]
+        : { leftMin: 10, leftMax: 40, topMin: 65, topMax: 75 };
+      var fiLeft = wz.leftMin + rnd() * (wz.leftMax - wz.leftMin);
+      var fiTop = wz.topMin + rnd() * (wz.topMax - wz.topMin);
+      var fiDur = 12 + rnd() * 10;                 // gemächliches Schwimmen
+      var fiDelay = rnd() * 8;
+      var fiSize = 16 + rnd() * 8;
+      var fiPath = (i % 2 === 0) ? 'fishSwim' : 'fishSwimAlt';
+      html += '<span class="amb-fish" style="left:' + fiLeft.toFixed(1) + '%;top:' + fiTop.toFixed(1) + '%;' +
+              'font-size:' + fiSize.toFixed(0) + 'px;' +
+              'animation:' + fiPath + ' ' + fiDur.toFixed(1) + 's ease-in-out ' + fiDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-fish-inner">' + fishGlyphs[i % fishGlyphs.length] + '</span></span>';
     }
 
     layer.innerHTML = html;

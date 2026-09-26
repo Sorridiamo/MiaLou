@@ -470,6 +470,30 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
   100% { transform: translate(0, 0); }
 }
 
+/* --- Fische: schwimmen im Wasser hin und her, mit leichtem Auf und Ab --- */
+.amb-fish { position: absolute; line-height: 1; opacity: 0.95; will-change: transform; }
+.amb-fish-inner { display: inline-block; animation: fishWobble 1.2s ease-in-out infinite; }
+@keyframes fishWobble {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-1px) rotate(3deg); }
+}
+/* Zwei flache Bahnen: kleine horizontale Wege, wenig vertikale Bewegung, damit
+   die Fische im schmalen Wasserstreifen bleiben. Beim Umkehren spiegeln (scaleX). */
+@keyframes fishSwim {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  45%  { transform: translate(80px, 4px) scaleX(1); }
+  50%  { transform: translate(80px, 4px) scaleX(-1); }
+  95%  { transform: translate(0, -3px) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+@keyframes fishSwimAlt {
+  0%   { transform: translate(0, 0) scaleX(-1); }
+  45%  { transform: translate(-64px, -4px) scaleX(-1); }
+  50%  { transform: translate(-64px, -4px) scaleX(1); }
+  95%  { transform: translate(0, 3px) scaleX(1); }
+  100% { transform: translate(0, 0) scaleX(-1); }
+}
+
 /* Wer weniger Bewegung möchte (Systemeinstellung), bekommt ein ruhiges Bild. */
 @media (prefers-reduced-motion: reduce) {
   .world-ambience { display: none; }
