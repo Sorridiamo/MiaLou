@@ -820,10 +820,18 @@ var APP = (function() {
     },
     village: {
       // Kein Vogel, keine Schmetterlinge — stattdessen krabbeln kleine
-      // Marienkäfer über das Pflaster.
+      // Marienkäfer über das Pflaster, dazu ein paar Schnecken mit einem
+      // Häschen auf dem Rücken. Nur 2 Marienkäfer (weniger Gewimmel als
+      // vorher), und die Blumen dürfen nur noch in den echten Grünflächen
+      // (unten links/rechts) erscheinen, nicht mehr über dem Pflaster/Brunnen.
       butterflies: 0, flowers: 4, sparks: 0, petals: 0,
-      ladybugs: 5,
-      clouds: false
+      ladybugs: 2,
+      snails: 2,
+      clouds: false,
+      flowerZones: [
+        { leftMin: 1, leftMax: 13, topMin: 84, topMax: 97 },
+        { leftMin: 79, leftMax: 97, topMin: 82, topMax: 97 }
+      ]
     },
     circus: {
       // Blumen unten am Bildrand wiegen sich, Schmetterlinge über der Wiese.
@@ -918,8 +926,18 @@ var APP = (function() {
     var flBase = cfg.bigFlowers ? 26 : 13;
     var flSpread = cfg.bigFlowers ? 12 : 7;
     for (i = 0; i < (cfg.flowers || 0); i++) {
-      var fLeft = 4 + rnd() * 90;
-      var fTop = 74 + rnd() * 20;                // ganz unten, in der Blumenzone
+      var fLeft, fTop;
+      if (cfg.flowerZones && cfg.flowerZones.length) {
+        // Manche Welten (z.B. Dorf) haben Pflaster/Wasser in der unteren
+        // Bildhälfte — dort dürfen keine Blumen erscheinen. Stattdessen wird
+        // eine der echten Grünflächen-Zonen des Bildes zufällig gewählt.
+        var fz = cfg.flowerZones[i % cfg.flowerZones.length];
+        fLeft = fz.leftMin + rnd() * (fz.leftMax - fz.leftMin);
+        fTop = fz.topMin + rnd() * (fz.topMax - fz.topMin);
+      } else {
+        fLeft = 4 + rnd() * 90;
+        fTop = 74 + rnd() * 20;                  // ganz unten, in der Blumenzone
+      }
       var fDur = 2.6 + rnd() * 2.2;              // langsames, ruhiges Wiegen
       var fDelay = rnd() * 3;
       var fSize = flBase + rnd() * flSpread;
@@ -993,6 +1011,22 @@ var APP = (function() {
               'font-size:' + lbSize.toFixed(0) + 'px;' +
               'animation:' + lbPath + ' ' + lbDur.toFixed(1) + 's ease-in-out ' + lbDelay.toFixed(1) + 's infinite">' +
               '<span class="amb-ladybug-inner">🐞</span></span>'; // 🐞
+    }
+
+    // --- Schnecken mit einem Häschen auf dem Rücken: kriechen ganz langsam
+    // über den Boden. Zwei Emoji übereinander (Schnecke + Hase), damit man
+    // sofort sieht, dass der Hase "mitreitet".
+    for (i = 0; i < (cfg.snails || 0); i++) {
+      var snTop = 68 + rnd() * 24;                 // Boden, ähnlich wie Marienkäfer
+      var snLeft = 8 + rnd() * 56;
+      var snDur = 26 + rnd() * 16;                 // sehr langsam
+      var snDelay = rnd() * 10;
+      var snSize = 20 + rnd() * 6;
+      var snPath = (i % 2 === 0) ? 'ladybugWalk' : 'ladybugWalkAlt'; // gleiche ruhige Bahnen wiederverwenden
+      html += '<span class="amb-snail" style="left:' + snLeft.toFixed(1) + '%;top:' + snTop.toFixed(1) + '%;' +
+              'font-size:' + snSize.toFixed(0) + 'px;' +
+              'animation:' + snPath + ' ' + snDur.toFixed(1) + 's ease-in-out ' + snDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-snail-inner">🐌</span><span class="amb-snail-rider">🐰</span></span>'; // 🐌🐰
     }
 
     layer.innerHTML = html;

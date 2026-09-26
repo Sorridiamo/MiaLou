@@ -436,6 +436,20 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
   100% { transform: translate(0, 0) scaleX(1); }
 }
 
+/* --- Schnecken mit Häschen auf dem Rücken: kriechen sehr langsam --- */
+.amb-snail { position: absolute; line-height: 1; opacity: 0.95; will-change: transform; }
+.amb-snail-inner { display: inline-block; }
+/* Der Hase sitzt leicht erhöht über der Schnecke, wie "obendrauf". */
+.amb-snail-rider {
+  display: inline-block; position: relative;
+  left: -0.55em; top: -0.6em; font-size: 0.6em;
+  animation: snailRiderBob 1.6s ease-in-out infinite;
+}
+@keyframes snailRiderBob {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-1px) rotate(4deg); }
+}
+
 /* Wer weniger Bewegung möchte (Systemeinstellung), bekommt ein ruhiges Bild. */
 @media (prefers-reduced-motion: reduce) {
   .world-ambience { display: none; }
