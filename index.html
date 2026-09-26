@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=24">
-  <link rel="stylesheet" href="style_profiles.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style_profiles.css?v=25">
 </head>
 <body>
 <div id="app">
@@ -98,6 +98,12 @@
     <button class="start-btn" onclick="PROFILES.openNewProfile()">Neues Profil anlegen</button>
     <h3 class="stats-h">Alle Profile</h3>
     <div id="admin-children" class="admin-list"></div>
+    <div class="admin-pin-box">
+      <label class="form-label">Welten-Vorschau</label>
+      <p class="form-hint">Zeigt dir die vier Belohnungs-Welten ungrau, ohne Punkte zu sammeln. Gilt nur für dich und nur bis zum nächsten Neuladen — beim Kind bleibt alles gesperrt.</p>
+      <button id="ad-preview-btn" class="small-btn" onclick="PROFILES.toggleWorldPreview()">Vorschau einschalten</button>
+      <button class="small-btn" onclick="PROFILES.openWorldPreview()">Welten ansehen</button>
+    </div>
     <div class="admin-pin-box">
       <label class="form-label" for="ad-new-pin">Admin-Passwort ändern</label>
       <input type="password" id="ad-new-pin" class="form-input" inputmode="numeric" autocomplete="off" placeholder="Neues Passwort (min. 4 Zeichen)">
@@ -743,17 +749,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=24"></script>
-<script src="app.js?v=24"></script>
-<script src="game_einmaleins.js?v=24"></script>
-<script src="game_durch.js?v=24"></script>
-<script src="game_plus.js?v=24"></script>
-<script src="game_minus.js?v=24"></script>
-<script src="game_rechtschreibung.js?v=24"></script>
-<script src="game_english.js?v=24"></script>
-<script src="game_geld.js?v=24"></script>
-<script src="stats.js?v=24"></script>
-<script src="profiles.js?v=24"></script>
+<script src="firebase-config.js?v=25"></script>
+<script src="app.js?v=25"></script>
+<script src="game_einmaleins.js?v=25"></script>
+<script src="game_durch.js?v=25"></script>
+<script src="game_plus.js?v=25"></script>
+<script src="game_minus.js?v=25"></script>
+<script src="game_rechtschreibung.js?v=25"></script>
+<script src="game_english.js?v=25"></script>
+<script src="game_geld.js?v=25"></script>
+<script src="stats.js?v=25"></script>
+<script src="profiles.js?v=25"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();

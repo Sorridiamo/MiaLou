@@ -274,6 +274,8 @@ var PROFILES = (function () {
   // === Profil auswählen ===
   function selectProfile(profileId) {
     activeProfileId = profileId;
+    // Sicherheitsnetz: sobald ein Kind ausgewählt wird, ist die Admin-Vorschau aus.
+    if (APP.setAdminPreview) APP.setAdminPreview(false);
     try { localStorage.setItem(KEY_LAST_PROFILE, profileId); } catch (e) {}
     // APP lädt jetzt die Daten dieses Kindes (Punkte, Sticker, Historie)
     APP.switchProfile(profileId);
@@ -855,6 +857,7 @@ var PROFILES = (function () {
 
   function openAdminDashboard() {
     renderAdminList();
+    updateWorldPreviewBtn();
     APP.goTo('admin');
   }
 
@@ -987,11 +990,40 @@ var PROFILES = (function () {
   function backToProfileSelect() {
     isAdmin = false;
     parentContextId = null;
+    // Vorschau beenden: ab hier kann wieder ein Kind spielen.
+    if (APP.setAdminPreview) APP.setAdminPreview(false);
     APP.goTo('profile-select');
   }
 
   function getParentContextId() { return parentContextId; }
   function isAdminSession() { return isAdmin; }
+
+  // --- Welten-Vorschau für den Admin ---
+  // Schaltet die vier Belohnungs-Welten nur für die laufende Sitzung frei, damit
+  // man sie anschauen und gestalten kann. Absichtlich nichts gespeichert: nach
+  // einem Neuladen ist die Vorschau wieder aus. Die Punkte des Kindes werden
+  // nicht angefasst, die Welten bleiben für das Kind gesperrt.
+  function updateWorldPreviewBtn() {
+    var btn = document.getElementById('ad-preview-btn');
+    if (!btn) return;
+    var on = !!(APP.isAdminPreview && APP.isAdminPreview());
+    btn.textContent = on ? 'Vorschau ausschalten' : 'Vorschau einschalten';
+  }
+
+  function toggleWorldPreview() {
+    if (!isAdmin) return;          // nur im Admin-Bereich
+    if (!APP.setAdminPreview) return;
+    APP.setAdminPreview(!(APP.isAdminPreview && APP.isAdminPreview()));
+    updateWorldPreviewBtn();
+  }
+
+  function openWorldPreview() {
+    if (!isAdmin) return;
+    // Bequemlichkeit: wer "Welten ansehen" drückt, will sie auch offen sehen.
+    if (APP.setAdminPreview) APP.setAdminPreview(true);
+    updateWorldPreviewBtn();
+    APP.goTo('worlds');
+  }
 
   return {
     AVATARS: AVATARS,
@@ -1025,6 +1057,8 @@ var PROFILES = (function () {
     deleteFromDashboard: deleteFromDashboard,
     backToProfileSelect: backToProfileSelect,
     getParentContextId: getParentContextId,
-    isAdminSession: isAdminSession
+    isAdminSession: isAdminSession,
+    toggleWorldPreview: toggleWorldPreview,
+    openWorldPreview: openWorldPreview
   };
 })();

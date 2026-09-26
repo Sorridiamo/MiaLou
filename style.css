@@ -254,6 +254,11 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
   display: block; width: auto !important; text-align: center;
 }
 
+/* Admin-Vorschau: Karte ganz normal farbig, aber mit einem blauen Auge-Badge
+   und einem dünnen Rahmen, damit klar bleibt: für das Kind ist sie noch zu. */
+.world-card.world-preview { outline: 2px dashed #5d8fc0; outline-offset: 2px; }
+.world-card.world-preview .world-lock { background: rgba(45,88,130,0.88); }
+
 /* Overlay, wenn eine neue Welt aufgeht */
 .world-unlock {
   position: fixed; inset: 0; z-index: 900;

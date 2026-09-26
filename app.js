@@ -52,11 +52,27 @@ var APP = (function() {
   ];
 
   function isWorldUnlocked(worldId) {
+    // Admin-Vorschau: alles offen, damit man die Welten anschauen und
+    // gestalten kann, ohne Punkte zu sammeln. Ändert NICHTS an totalEarned —
+    // beim Kind bleiben die Welten genau so gesperrt wie vorher.
+    if (adminPreview) return true;
     for (var i = 0; i < LOCKED_WORLDS.length; i++) {
       if (LOCKED_WORLDS[i].id === worldId) return totalEarned >= LOCKED_WORLDS[i].need;
     }
     return true;   // alle übrigen Welten sind von Anfang an offen
   }
+
+  // === Admin-Vorschau ===
+  // Wird nur im Admin-Bereich eingeschaltet und gilt für die laufende Sitzung.
+  // Absichtlich NICHT in localStorage oder der Cloud gespeichert: nach dem
+  // Neuladen ist sie wieder aus, damit das Kind sie nie versehentlich erbt.
+  var adminPreview = false;
+
+  function setAdminPreview(on) {
+    adminPreview = !!on;
+    if (document.getElementById('worlds-screen')) renderWorlds();
+  }
+  function isAdminPreview() { return adminPreview; }
 
   var PRIZE_COST = 25;
 
@@ -705,15 +721,26 @@ var APP = (function() {
       var wid = card.getAttribute('data-world');
       if (!wid) continue;
       var badge = card.querySelector('.world-lock');
-      if (isWorldUnlocked(wid)) {
+      var need = 0;
+      for (var j = 0; j < LOCKED_WORLDS.length; j++) {
+        if (LOCKED_WORLDS[j].id === wid) need = LOCKED_WORLDS[j].need;
+      }
+      // In der Admin-Vorschau ist die Karte offen, trägt aber ein Auge-Abzeichen
+      // mit der Punktzahl — so sieht man, was das Kind noch braucht.
+      if (adminPreview && need > 0 && totalEarned < need) {
         card.classList.remove('world-locked');
+        card.classList.add('world-preview');
+        if (badge) {
+          badge.textContent = '👁 ' + need;
+          badge.classList.remove('hidden');
+        }
+      } else if (isWorldUnlocked(wid)) {
+        card.classList.remove('world-locked');
+        card.classList.remove('world-preview');
         if (badge) badge.classList.add('hidden');
       } else {
         card.classList.add('world-locked');
-        var need = 0;
-        for (var j = 0; j < LOCKED_WORLDS.length; j++) {
-          if (LOCKED_WORLDS[j].id === wid) need = LOCKED_WORLDS[j].need;
-        }
+        card.classList.remove('world-preview');
         if (badge) {
           badge.textContent = '🔒 ' + need;
           badge.classList.remove('hidden');
@@ -724,10 +751,16 @@ var APP = (function() {
     var prog = document.getElementById('worlds-progress');
     if (prog) {
       var nx = getNextLockedWorld();
-      prog.textContent = nx
-        ? ('Insgesamt ' + totalEarned + ' Punkte gesammelt — noch ' + nx.missing +
-           ' bis ' + nx.world.name + '.')
-        : ('Insgesamt ' + totalEarned + ' Punkte gesammelt — alle Welten sind offen!');
+      if (adminPreview) {
+        prog.textContent = 'Admin-Vorschau: alle Welten offen. ' +
+          (nx ? ('Für das Kind sind noch ' + nx.missing + ' Punkte bis ' + nx.world.name + ' nötig.')
+              : 'Das Kind hat schon alle Welten erreicht.');
+      } else {
+        prog.textContent = nx
+          ? ('Insgesamt ' + totalEarned + ' Punkte gesammelt — noch ' + nx.missing +
+             ' bis ' + nx.world.name + '.')
+          : ('Insgesamt ' + totalEarned + ' Punkte gesammelt — alle Welten sind offen!');
+      }
     }
     var hint = document.getElementById('worlds-locked-hint');
     if (hint) hint.classList.add('hidden');
@@ -1235,6 +1268,8 @@ var APP = (function() {
     openUnlockedWorld: openUnlockedWorld,
     isWorldUnlocked: isWorldUnlocked,
     getTotalEarned: getTotalEarned,
+    setAdminPreview: setAdminPreview,
+    isAdminPreview: isAdminPreview,
     renderAmbience: renderAmbience,
     nowCH: nowCH,
     fmtCH: fmtCH,
