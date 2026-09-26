@@ -697,58 +697,58 @@ var APP = (function() {
   var AMBIENCE = {
     forest: {
       // Kein Vogel mehr (sah komisch aus). Schmetterlinge in drei Farben.
-      birds: 0, butterflies: 3, flowers: 5, sparks: 7, petals: 3,
+      butterflies: 3, flowers: 5, sparks: 7, petals: 3,
       clouds: false   // im Wald sieht man den Himmel kaum — Wolken würden über den Wipfeln schweben
     },
     farm: {
       // Nur noch Blumen — alles andere entfernt. Grössere Blüten, passend zum Feld.
-      birds: 0, butterflies: 0, flowers: 5, sparks: 0, petals: 0,
+      butterflies: 0, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
       clouds: false
     },
     mountain: {
-      birds: 0, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
+      butterflies: 2, flowers: 4, sparks: 0, petals: 0,
       clouds: true
     },
     ocean: {
       // Nur kleine Krebse und Schildkröten, die sich am Strand bewegen.
-      birds: 0, butterflies: 0, flowers: 0, sparks: 0, petals: 0,
+      butterflies: 0, flowers: 0, sparks: 0, petals: 0,
       crabs: 3, turtles: 2,
       clouds: false
     },
     village: {
       // Kein Vogel, keine Schmetterlinge — stattdessen krabbeln kleine
       // Marienkäfer über das Pflaster.
-      birds: 0, butterflies: 0, flowers: 4, sparks: 0, petals: 0,
+      butterflies: 0, flowers: 4, sparks: 0, petals: 0,
       ladybugs: 5,
       clouds: false
     },
     circus: {
       // Blumen unten am Bildrand wiegen sich, Schmetterlinge über der Wiese.
-      birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      butterflies: 3, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
       clouds: false
     },
     park: {
       // Freizeitpark: Blumen am Bildrand, Schmetterlinge über dem Weg.
-      birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      butterflies: 3, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
       clouds: false
     },
     castle: {
       // Schloss: Wolken über den Türmen, Schmetterlinge auf der Wiese.
-      birds: 0, butterflies: 2, flowers: 4, sparks: 0, petals: 0,
+      butterflies: 2, flowers: 4, sparks: 0, petals: 0,
       clouds: true
     },
     veggie: {
       // Gemüsegarten: viele grosse Blüten und Schmetterlinge über den Beeten.
-      birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      butterflies: 3, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
       clouds: false
     },
     space: {
       // Weltall: nur funkelnde Sterne — keine Blumen, keine Wolken.
-      birds: 0, butterflies: 0, flowers: 0, sparks: 14, petals: 0,
+      butterflies: 0, flowers: 0, sparks: 14, petals: 0,
       clouds: false
     }
   };
@@ -788,19 +788,11 @@ var APP = (function() {
       else cloudLayer.classList.remove('hidden');
     }
 
-    // --- Vögel: fliegen quer durchs Bild, oberes Drittel ---
-    var birdGlyphs = ['🐦', '🕊️']; // 🐦 🕊️
-    for (i = 0; i < (cfg.birds || 0); i++) {
-      var bTop = 6 + rnd() * 26;                 // 6–32 % Höhe
-      var bDur = 16 + rnd() * 14;                // 16–30 s pro Durchflug
-      var bDelay = rnd() * 18;                   // versetzte Starts
-      var bDir = (i % 2 === 0) ? 'birdFlyRight' : 'birdFlyLeft';
-      var bSize = 14 + rnd() * 8;
-      html += '<span class="amb-bird" style="top:' + bTop.toFixed(1) + '%;left:0;' +
-              'font-size:' + bSize.toFixed(0) + 'px;' +
-              'animation:' + bDir + ' ' + bDur.toFixed(1) + 's linear ' + bDelay.toFixed(1) + 's infinite">' +
-              '<span class="amb-bird-inner">' + birdGlyphs[i % birdGlyphs.length] + '</span></span>';
-    }
+    // --- Vögel: bewusst ersatzlos entfernt ---
+    // Der Emoji-Vogel passte nie zum gemalten Stil und ist in keiner Welt mehr
+    // erwünscht. Der Code ist ganz weg, nicht nur auf 0 gestellt — so kann er
+    // auch dann nicht auftauchen, wenn irgendwo ein alter Zähler überlebt.
+    // (Ein Vogel als Sticker bleibt natürlich möglich.)
 
     // --- Schmetterlinge: flattern auf kleinen Rundbahnen in der Blumenzone ---
     // Drei verschiedene Farben: der graue Emoji-Schmetterling wird per CSS-Filter
