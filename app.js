@@ -34,8 +34,8 @@ var APP = (function() {
     swing:'Schaukel'
   };
 
-  var WORLDS = ['forest','ocean','farm','mountain','village','garden'];
-  var WORLD_NAMES = { forest:'Wald', ocean:'Meer', farm:'Bauernhof', mountain:'Berge' };
+  var WORLDS = ['forest','ocean','farm','mountain','village','circus'];
+  var WORLD_NAMES = { forest:'Wald', ocean:'Meer', farm:'Bauernhof', mountain:'Berge', village:'Dorf', circus:'Zirkus' };
   var PRIZE_COST = 25;
 
   // === LocalStorage keys (prefixed) — dienen als Offline-Cache ===
@@ -182,7 +182,8 @@ var APP = (function() {
     'plus_errors', 'plus_history',
     'minus_errors', 'minus_history',
     'rechtschreibung_errors', 'rechtschreibung_history',
-    'english_errors', 'english_history'
+    'english_errors', 'english_history',
+    'geld_errors', 'geld_history'
   ];
 
   function collectGameData() {
@@ -291,7 +292,7 @@ var APP = (function() {
     } else {
       txt += ' — noch ' + toNext + ' bis zum nächsten Preis';
     }
-    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','worlds-points','shop-points'];
+    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','ge-points','worlds-points','shop-points'];
     for (var i = 0; i < ids.length; i++) {
       var el = document.getElementById(ids[i]);
       if (el) el.textContent = txt;
@@ -337,7 +338,7 @@ var APP = (function() {
     var toNext = getPointsToNextPrize();
     var txt = points + ' Punkte';
     txt += (available > 0) ? (' — ' + available + ' Preis' + (available > 1 ? 'e' : '') + ' verfügbar!') : (' — noch ' + toNext + ' bis zum nächsten Preis');
-    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','worlds-points','shop-points'];
+    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','ge-points','worlds-points','shop-points'];
     for (var i = 0; i < ids.length; i++) {
       var el = document.getElementById(ids[i]);
       if (el) el.textContent = txt;
@@ -413,6 +414,7 @@ var APP = (function() {
     if (screen === 'rs-start') { RS.initStart(); }
     if (screen === 'en-start') { EN.initStart(); }
     if (screen === 'en-words') { EN.initWords(); }
+    if (screen === 'ge-start') { GE.initStart(); }
     if (screen === 'shop') { renderShop(); }
     if (screen === 'worlds') { /* nothing special */ }
     if (screen === 'profile-select') { PROFILES.renderProfileSelect(); }
@@ -518,6 +520,12 @@ var APP = (function() {
     },
     garden: {
       birds: 1, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
+      bigFlowers: true,
+      clouds: false
+    },
+    circus: {
+      // Blumen unten am Bildrand wiegen sich, Schmetterlinge über der Wiese.
+      birds: 0, butterflies: 3, flowers: 5, sparks: 0, petals: 0,
       bigFlowers: true,
       clouds: false
     }

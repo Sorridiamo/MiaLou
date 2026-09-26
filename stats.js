@@ -84,6 +84,14 @@ var STATS = (function () {
         return String(w);
       },
       errorLabel: function (e) { return String((e && e.word) || e); }
+    },
+    {
+      key: 'geld', label: 'Geld',
+      historyKey: 'geld_history', errorsKey: 'geld_errors',
+      countField: 'totalTasks',
+      wrongField: 'wrongTasks',
+      describeWrong: function (w) { return String(w); },
+      errorLabel: function (e) { return String((e && e.word) || e); }
     }
   ];
 

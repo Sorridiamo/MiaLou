@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=18">
-  <link rel="stylesheet" href="style_profiles.css?v=18">
+  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style_profiles.css?v=19">
 </head>
 <body>
 <div id="app">
@@ -184,6 +184,7 @@
       <button class="home-btn home-btn-orange" onclick="APP.goTo('mi-start')">Minus</button>
       <button class="home-btn home-btn-blue" onclick="APP.goTo('rs-start')">Rechtschreibung</button>
       <button class="home-btn home-btn-red" onclick="APP.goTo('en-start')">Englisch</button>
+      <button class="home-btn home-btn-mint" onclick="APP.goTo('ge-start')">Geld</button>
       <button class="home-btn home-btn-gold" onclick="APP.goTo('worlds')">Welt der Preise</button>
     </div>
   </div>
@@ -613,6 +614,56 @@
     <div id="enw-list" class="admin-list"></div>
   </div>
 
+  <!-- ===== GELD START ===== -->
+  <div id="ge-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="ge-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Geld</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Welches Spiel?</p>
+    <div id="ge-mode-selector" class="cat-selector">
+      <button class="cat-btn selected" data-mode="change" onclick="GE.selectMode(this)">Rückgeld</button>
+      <button class="cat-btn" data-mode="multi" onclick="GE.selectMode(this)">Mehrere Stücke</button>
+    </div>
+    <p id="ge-mode-hint" class="fg-info"></p>
+    <p class="selector-label">Wie viele Aufgaben?</p>
+    <div id="ge-count-selector" class="count-selector count-selector-5">
+      <button class="count-btn" data-count="5" onclick="GE.selectCount(this)">5</button>
+      <button class="count-btn selected" data-count="10" onclick="GE.selectCount(this)">10</button>
+      <button class="count-btn" data-count="15" onclick="GE.selectCount(this)">15</button>
+      <button class="count-btn" data-count="20" onclick="GE.selectCount(this)">20</button>
+      <button class="count-btn" data-count="30" onclick="GE.selectCount(this)">30</button>
+    </div>
+    <p id="ge-start-count" class="start-count">10 Aufgaben — Rückgeld</p>
+    <button class="start-btn" onclick="GE.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="ge-history-toggle" class="history-toggle" onclick="GE.toggleHistory()">Historie anzeigen</button>
+      <div id="ge-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== GELD GAME ===== -->
+  <div id="ge-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="GE.endEarly()">Ende</button></div>
+    <header><h1>Geld</h1>
+      <div class="score-bar"><span id="ge-score-text">0 / 0</span>
+        <div class="progress-track"><div id="ge-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="ge-scene" class="scene-container scene-container-sm"><img id="ge-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="ge-particles" class="particles"></div></div>
+    <div id="ge-question-area" class="question-area">
+      <p id="ge-prompt" class="prompt-text"></p>
+      <div id="ge-body" class="ge-body"></div>
+    </div>
+    <div id="ge-end" class="end-screen hidden">
+      <h2 id="ge-end-title"></h2><p id="ge-end-msg"></p><div id="ge-end-stats"></div>
+      <button class="restart-btn" onclick="GE.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
   <!-- ===== WORLDS ===== -->
   <div id="worlds-screen" class="screen hidden">
     <div class="game-topbar">
@@ -627,7 +678,7 @@
       <div class="world-card" onclick="APP.openWorld('farm')"><img src="images/world_farm.png" alt="Bauernhof"><span>Bauernhof</span></div>
       <div class="world-card" onclick="APP.openWorld('mountain')"><img src="images/world_mountain.png" alt="Berge"><span>Berge</span></div>
       <div class="world-card" onclick="APP.openWorld('village')"><img src="images/world_village.png" alt="Dorf"><span>Dorf</span></div>
-      <div class="world-card" onclick="APP.openWorld('garden')"><img src="images/world_garden.png" alt="Garten"><span>Garten</span></div>
+      <div class="world-card" onclick="APP.openWorld('circus')"><img src="images/world_circus.png" alt="Zirkus"><span>Zirkus</span></div>
     </div>
     <button class="home-btn home-btn-gold" onclick="APP.goTo('shop')" style="margin-top:12px">Sticker-Shop</button>
   </div>
@@ -673,16 +724,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=18"></script>
-<script src="app.js?v=18"></script>
-<script src="game_einmaleins.js?v=18"></script>
-<script src="game_durch.js?v=18"></script>
-<script src="game_plus.js?v=18"></script>
-<script src="game_minus.js?v=18"></script>
-<script src="game_rechtschreibung.js?v=18"></script>
-<script src="game_english.js?v=18"></script>
-<script src="stats.js?v=18"></script>
-<script src="profiles.js?v=18"></script>
+<script src="firebase-config.js?v=19"></script>
+<script src="app.js?v=19"></script>
+<script src="game_einmaleins.js?v=19"></script>
+<script src="game_durch.js?v=19"></script>
+<script src="game_plus.js?v=19"></script>
+<script src="game_minus.js?v=19"></script>
+<script src="game_rechtschreibung.js?v=19"></script>
+<script src="game_english.js?v=19"></script>
+<script src="game_geld.js?v=19"></script>
+<script src="stats.js?v=19"></script>
+<script src="profiles.js?v=19"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();
