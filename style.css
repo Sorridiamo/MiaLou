@@ -450,6 +450,26 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
   50% { transform: translateY(-1px) rotate(4deg); }
 }
 
+/* --- Luftballons: schweben ruhig über dem Platz, leicht schaukelnd --- */
+.amb-balloon { position: absolute; line-height: 1; opacity: 0.95; will-change: transform; }
+.amb-balloon-inner { display: inline-block; animation: balloonSway 3.2s ease-in-out infinite; }
+/* Farbvarianten: der graue Ballon-Emoji wird per Filter umgefärbt. */
+.amb-balloon-red    .amb-balloon-inner { filter: hue-rotate(0deg) saturate(1.5); }
+.amb-balloon-blue   .amb-balloon-inner { filter: hue-rotate(200deg) saturate(1.7); }
+.amb-balloon-green  .amb-balloon-inner { filter: hue-rotate(110deg) saturate(1.5); }
+.amb-balloon-yellow .amb-balloon-inner { filter: hue-rotate(65deg) saturate(1.8) brightness(1.1); }
+@keyframes balloonSway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes balloonFloat {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(14px, -18px); }
+  50%  { transform: translate(-6px, -30px); }
+  75%  { transform: translate(-18px, -14px); }
+  100% { transform: translate(0, 0); }
+}
+
 /* Wer weniger Bewegung möchte (Systemeinstellung), bekommt ein ruhiges Bild. */
 @media (prefers-reduced-motion: reduce) {
   .world-ambience { display: none; }

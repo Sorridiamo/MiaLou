@@ -846,9 +846,11 @@ var APP = (function() {
       clouds: false
     },
     park: {
-      // Freizeitpark: Blumen am Bildrand, Schmetterlinge über dem Weg.
-      butterflies: 3, flowers: 5, sparks: 0, petals: 0,
-      bigFlowers: true,
+      // Freizeitpark: keine Schmetterlinge und keine Ambiente-Blumen mehr
+      // (die landeten auf dem gepflasterten Platz). Stattdessen schweben ein
+      // paar bunte Luftballons über dem Platz — passt zum Jahrmarkt-Motiv.
+      butterflies: 0, flowers: 0, sparks: 0, petals: 0,
+      balloons: 3,
       clouds: false
     },
     castle: {
@@ -1033,6 +1035,23 @@ var APP = (function() {
               'font-size:' + snSize.toFixed(0) + 'px;' +
               'animation:' + snPath + ' ' + snDur.toFixed(1) + 's ease-in-out ' + snDelay.toFixed(1) + 's infinite">' +
               '<span class="amb-snail-inner">🐌</span><span class="amb-snail-rider">🐰</span></span>'; // 🐌🐰
+    }
+
+    // --- Luftballons: schweben bunt über dem Platz, leicht seitlich schaukelnd.
+    // Der graue Ballon-Emoji wird per CSS-Filter in verschiedene Farben getönt
+    // (rot, blau, grün, gelb), damit die Ballons klar unterscheidbar sind.
+    var balloonTints = ['amb-balloon-red', 'amb-balloon-blue', 'amb-balloon-green', 'amb-balloon-yellow'];
+    for (i = 0; i < (cfg.balloons || 0); i++) {
+      var baLeft = 12 + rnd() * 72;
+      var baTop = 20 + rnd() * 46;                 // obere/mittlere Bildhälfte = Himmel/Platz
+      var baDur = 10 + rnd() * 8;
+      var baDelay = rnd() * 6;
+      var baSize = 26 + rnd() * 12;
+      html += '<span class="amb-balloon ' + balloonTints[i % balloonTints.length] +
+              '" style="left:' + baLeft.toFixed(1) + '%;top:' + baTop.toFixed(1) + '%;' +
+              'font-size:' + baSize.toFixed(0) + 'px;' +
+              'animation:balloonFloat ' + baDur.toFixed(1) + 's ease-in-out ' + baDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-balloon-inner">🎈</span></span>'; // 🎈
     }
 
     layer.innerHTML = html;
