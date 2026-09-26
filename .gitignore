@@ -10,3 +10,4 @@ __pycache__/
 
 # Backup originals
 images/backup_originals/
+images/_orig_stickers/

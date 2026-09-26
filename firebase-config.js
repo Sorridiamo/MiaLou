@@ -15,7 +15,7 @@ var firebaseConfig = {
 // Sichtbare Versionsnummer: erscheint klein auf dem Startscreen. Damit sieht
 // man sofort, ob der Browser wirklich die neue Fassung geladen hat oder noch
 // eine alte aus dem Cache.
-var APP_VERSION = 'v2.8';
+var APP_VERSION = 'v2.9';
 
 // Diagnose: hier landet der letzte Verbindungsfehler in Klartext, damit er in
 // der App angezeigt werden kann (statt nur in der Browser-Konsole).
