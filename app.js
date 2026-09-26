@@ -476,7 +476,160 @@ var APP = (function() {
     currentWorld = worldId;
     document.getElementById('world-bg').src = 'images/world_' + worldId + '.png';
     goTo('world-view');
+    renderAmbience(worldId);
     renderPlacedStickers();
+  }
+
+  // =====================================================================
+  // === AMBIENTE-ANIMATIONEN (Vogel, Schmetterlinge, Wind, Funkeln) ======
+  // =====================================================================
+  // Legt kleine bewegte Elemente über das Landschaftsbild. Die Bilder selbst
+  // sind gemalte Flächen und können nicht animiert werden — diese Ebene
+  // erzeugt den Eindruck von Leben darüber.
+  //
+  // Pro Welt ein eigenes "Rezept": im Wald Vögel/Schmetterlinge/Glühwürmchen,
+  // im Ozean Fische und Luftblasen, usw. Ein neues Element hier ergänzen,
+  // dann erscheint es automatisch.
+  var AMBIENCE = {
+    forest: {
+      birds: 2, butterflies: 3, flowers: 5, sparks: 7, petals: 3,
+      clouds: false   // im Wald sieht man den Himmel kaum — Wolken würden über den Wipfeln schweben
+    },
+    farm: {
+      birds: 3, butterflies: 2, flowers: 6, sparks: 0, petals: 2,
+      clouds: true
+    },
+    mountain: {
+      birds: 2, butterflies: 1, flowers: 3, sparks: 4, petals: 0,
+      clouds: true
+    },
+    ocean: {
+      birds: 1, butterflies: 0, flowers: 0, sparks: 5, petals: 0,
+      fish: 3, bubbles: 6,
+      clouds: true
+    }
+  };
+
+  // Kleine deterministische Zufallsfunktion: gleicher Startwert -> gleiche
+  // Positionen. So sieht die Welt bei jedem Öffnen gleich aus (kein Flackern
+  // oder Umherspringen) und wir brauchen kein Math.random().
+  function seededRand(seed) {
+    var s = seed;
+    return function () {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      return s / 0x7fffffff;
+    };
+  }
+
+  // Aus dem Weltnamen einen stabilen Startwert machen
+  function seedFromName(name) {
+    var h = 7;
+    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0x7fffffff;
+    return h || 7;
+  }
+
+  function renderAmbience(worldId) {
+    var layer = document.getElementById('world-ambience');
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    var cfg = AMBIENCE[worldId] || AMBIENCE.farm;
+    var rnd = seededRand(seedFromName(worldId));
+    var html = '';
+    var i;
+
+    // Wolken je Welt ein- oder ausblenden (im Wald störten sie über den Wipfeln)
+    var cloudLayer = document.getElementById('world-clouds');
+    if (cloudLayer) {
+      if (cfg.clouds === false) cloudLayer.classList.add('hidden');
+      else cloudLayer.classList.remove('hidden');
+    }
+
+    // --- Vögel: fliegen quer durchs Bild, oberes Drittel ---
+    var birdGlyphs = ['🐦', '🕊️']; // 🐦 🕊️
+    for (i = 0; i < (cfg.birds || 0); i++) {
+      var bTop = 6 + rnd() * 26;                 // 6–32 % Höhe
+      var bDur = 16 + rnd() * 14;                // 16–30 s pro Durchflug
+      var bDelay = rnd() * 18;                   // versetzte Starts
+      var bDir = (i % 2 === 0) ? 'birdFlyRight' : 'birdFlyLeft';
+      var bSize = 14 + rnd() * 8;
+      html += '<span class="amb-bird" style="top:' + bTop.toFixed(1) + '%;left:0;' +
+              'font-size:' + bSize.toFixed(0) + 'px;' +
+              'animation:' + bDir + ' ' + bDur.toFixed(1) + 's linear ' + bDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-bird-inner">' + birdGlyphs[i % birdGlyphs.length] + '</span></span>';
+    }
+
+    // --- Schmetterlinge: flattern auf kleinen Rundbahnen in der Blumenzone ---
+    for (i = 0; i < (cfg.butterflies || 0); i++) {
+      var flLeft = 8 + rnd() * 76;
+      var flTop = 52 + rnd() * 34;               // untere Bildhälfte, wo die Blumen sind
+      var flDur = 9 + rnd() * 8;
+      var flDelay = rnd() * 7;
+      html += '<span class="amb-butterfly" style="left:' + flLeft.toFixed(1) + '%;top:' + flTop.toFixed(1) + '%;' +
+              'animation:butterflyPath ' + flDur.toFixed(1) + 's ease-in-out ' + flDelay.toFixed(1) + 's infinite">' +
+              '<span class="amb-butterfly-inner">🦋</span></span>'; // 🦋
+    }
+
+    // --- Blumen, die sich im Wind wiegen ---
+    var flowerGlyphs = ['🌸', '🌼', '🌷', '🌺']; // 🌸 🌼 🌷 🌺
+    for (i = 0; i < (cfg.flowers || 0); i++) {
+      var fLeft = 4 + rnd() * 90;
+      var fTop = 74 + rnd() * 20;                // ganz unten, in der Blumenzone
+      var fDur = 2.6 + rnd() * 2.2;              // langsames, ruhiges Wiegen
+      var fDelay = rnd() * 3;
+      var fSize = 13 + rnd() * 7;
+      html += '<span class="amb-flower" style="left:' + fLeft.toFixed(1) + '%;top:' + fTop.toFixed(1) + '%;' +
+              'font-size:' + fSize.toFixed(0) + 'px;' +
+              'animation:sway ' + fDur.toFixed(1) + 's ease-in-out ' + fDelay.toFixed(1) + 's infinite">' +
+              flowerGlyphs[i % flowerGlyphs.length] + '</span>';
+    }
+
+    // --- Lichtpunkte / Glühwürmchen ---
+    for (i = 0; i < (cfg.sparks || 0); i++) {
+      var sLeft = 5 + rnd() * 90;
+      var sTop = 20 + rnd() * 65;
+      var sSize = 5 + rnd() * 7;
+      var sDur = 2.4 + rnd() * 3;
+      var sDelay = rnd() * 4;
+      html += '<span class="amb-spark" style="left:' + sLeft.toFixed(1) + '%;top:' + sTop.toFixed(1) + '%;' +
+              'width:' + sSize.toFixed(0) + 'px;height:' + sSize.toFixed(0) + 'px;' +
+              'animation:sparkle ' + sDur.toFixed(1) + 's ease-in-out ' + sDelay.toFixed(1) + 's infinite"></span>';
+    }
+
+    // --- Fallende Blütenblätter ---
+    for (i = 0; i < (cfg.petals || 0); i++) {
+      var pLeft = 10 + rnd() * 78;
+      var pDur = 11 + rnd() * 9;
+      var pDelay = rnd() * 12;
+      html += '<span class="amb-petal" style="left:' + pLeft.toFixed(1) + '%;top:0;' +
+              'animation:petalFall ' + pDur.toFixed(1) + 's linear ' + pDelay.toFixed(1) + 's infinite">' +
+              '🌿</span>'; // 🌿
+    }
+
+    // --- Fische (nur Ozean) ---
+    for (i = 0; i < (cfg.fish || 0); i++) {
+      var fiTop = 45 + rnd() * 45;
+      var fiDur = 14 + rnd() * 12;
+      var fiDelay = rnd() * 10;
+      var fiDir = (i % 2 === 0) ? 'fishSwimRight' : 'fishSwimLeft';
+      html += '<span class="amb-fish" style="top:' + fiTop.toFixed(1) + '%;left:0;' +
+              'animation:' + fiDir + ' ' + fiDur.toFixed(1) + 's linear ' + fiDelay.toFixed(1) + 's infinite">' +
+              '🐟</span>'; // 🐟
+    }
+
+    // --- Luftblasen (nur Ozean) ---
+    for (i = 0; i < (cfg.bubbles || 0); i++) {
+      var buLeft = 8 + rnd() * 84;
+      var buTop = 70 + rnd() * 26;
+      var buSize = 5 + rnd() * 8;
+      var buDur = 7 + rnd() * 6;
+      var buDelay = rnd() * 9;
+      html += '<span class="amb-bubble" style="left:' + buLeft.toFixed(1) + '%;top:' + buTop.toFixed(1) + '%;' +
+              'width:' + buSize.toFixed(0) + 'px;height:' + buSize.toFixed(0) + 'px;' +
+              'animation:bubbleRise ' + buDur.toFixed(1) + 's linear ' + buDelay.toFixed(1) + 's infinite"></span>';
+    }
+
+    layer.innerHTML = html;
   }
 
   function renderPlacedStickers() {
@@ -764,6 +917,7 @@ var APP = (function() {
   return {
     goTo: goTo,
     openWorld: openWorld,
+    renderAmbience: renderAmbience,
     openInventory: openInventory,
     closeInventory: closeInventory,
     addPoint: addPoint,
