@@ -888,22 +888,24 @@ var EN = (function () {
     if (!wrap) return;
     var html = '', i;
 
-    html += '<p class="form-hint">Haken gesetzt = das Wort wird im Spiel gefragt. Haken weg = es kommt nicht vor (bleibt aber gespeichert).</p>';
+    html += '<p class="form-hint">„Ausblenden" = das Wort kommt im Spiel nicht vor (bleibt aber gespeichert). „Einblenden" macht es wieder rückgängig.</p>';
 
     html += '<h3 class="stats-h">Eigene Wörter (' + overlay.custom.length + ')</h3>';
     if (overlay.custom.length === 0) {
       html += '<p class="form-hint">Noch keine eigenen Wörter hinzugefügt.</p>';
     } else {
       for (i = 0; i < overlay.custom.length; i++) {
-        var c = overlay.custom[i];
+        var c = overlay.custom[i], cHidden = isHidden(c.en);
         html += '<div class="admin-row">' +
-          '<label class="enw-check" title="Haken = wird im Spiel gefragt"><input type="checkbox"' + (isHidden(c.en) ? '' : ' checked') +
-          ' onchange="EN.toggleActive(\'' + esc(normKey(c.en)) + '\', this.checked)"><span>gefragt</span></label>' +
           '<span class="admin-name">' + esc(c.de) + ' — <strong>' + esc(c.en) + '</strong>' +
+          (cHidden ? ' <span class="enw-edited-tag">(ausgeblendet)</span>' : '') +
           (c.sentence ? '<br><span class="enw-sentence">' + esc(c.sentence) + '</span>' : '') + '</span>' +
           '<span class="admin-row-actions">' +
           '<button class="small-btn" onclick="EN.startEditCustom(' + i + ')">Bearbeiten</button>' +
           '<button class="small-btn small-btn-danger" onclick="EN.deleteCustom(' + i + ')">Löschen</button>' +
+          (cHidden
+            ? '<button class="small-btn" onclick="EN.showWord(\'' + esc(normKey(c.en)) + '\')">Einblenden</button>'
+            : '<button class="small-btn" onclick="EN.hideWord(\'' + esc(normKey(c.en)) + '\')">Ausblenden</button>') +
           '</span></div>';
       }
     }
@@ -911,14 +913,17 @@ var EN = (function () {
     html += '<h3 class="stats-h">Eingebaute Wörter (' + BUILTIN.length + ')</h3>';
     for (i = 0; i < BUILTIN.length; i++) {
       var vb = BUILTIN[i], ved = getEdit(vb.en), vShow = ved ? { de: ved.de || vb.de, en: ved.en || vb.en, sentence: ved.sentence || vb.sentence } : vb;
+      var vHidden = isHidden(vb.en);
       html += '<div class="admin-row">' +
-        '<label class="enw-check" title="Haken = wird im Spiel gefragt"><input type="checkbox"' + (isHidden(vb.en) ? '' : ' checked') +
-        ' onchange="EN.toggleActive(\'' + esc(normKey(vb.en)) + '\', this.checked)"><span>gefragt</span></label>' +
         '<span class="admin-name">' + esc(vShow.de) + ' — <strong>' + esc(vShow.en) + '</strong>' +
         (ved ? ' <span class="enw-edited-tag">(bearbeitet)</span>' : '') +
+        (vHidden ? ' <span class="enw-edited-tag">(ausgeblendet)</span>' : '') +
         (vShow.sentence ? '<br><span class="enw-sentence">' + esc(vShow.sentence) + '</span>' : '') + '</span>' +
         '<span class="admin-row-actions">' +
         '<button class="small-btn" onclick="EN.startEditWord(\'' + esc(normKey(vb.en)) + '\')">Bearbeiten</button>' +
+        (vHidden
+          ? '<button class="small-btn" onclick="EN.showWord(\'' + esc(normKey(vb.en)) + '\')">Einblenden</button>'
+          : '<button class="small-btn" onclick="EN.hideWord(\'' + esc(normKey(vb.en)) + '\')">Ausblenden</button>') +
         '</span></div>';
     }
     wrap.innerHTML = html;
@@ -1040,25 +1045,6 @@ var EN = (function () {
     });
   }
 
-  // Kästchen pro Wort: Haken gesetzt (active=true) = das Wort wird im Spiel
-  // gefragt; Haken weg (active=false) = es kommt nicht vor. Steuert overlay.hidden
-  // und gilt gleichermassen für eigene und eingebaute Wörter. Das Wort selbst
-  // bleibt immer gespeichert — es wird nur ein- oder ausgeblendet.
-  function toggleActive(enKey, active) {
-    var k = normKey(enKey);
-    var idx = overlay.hidden.indexOf(k);
-    if (active) {
-      if (idx >= 0) overlay.hidden.splice(idx, 1);
-    } else {
-      if (idx < 0) overlay.hidden.push(k);
-    }
-    renderWordList();
-    saveOverlay(function (hint) {
-      var base = active ? 'Wird jetzt gefragt.' : 'Kommt jetzt nicht mehr vor.';
-      setWordsMsg(hint ? (base + ' Hinweis: ' + hint) : base, true);
-    });
-  }
-
   return {
     // Spiel
     selectMode: selectMode,
@@ -1078,7 +1064,6 @@ var EN = (function () {
     deleteCustom: deleteCustom,
     hideWord: hideWord,
     showWord: showWord,
-    toggleActive: toggleActive,
     startEditWord: startEditWord,
     startEditCustom: startEditCustom,
     cancelEditWord: cancelEditWord,

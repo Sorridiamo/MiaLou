@@ -1,10 +1,10 @@
-/* test_english_checkbox.js — prüft das neue Kästchen pro Englischwort.
+/* test_english_checkbox.js — prüft, dass jedes Wort (eigen + eingebaut) die
+   drei Aktionen Bearbeiten / Löschen (nur eigene) / Ausblenden-Einblenden hat.
 
-   Wunsch: pro Wort ein Kästchen. Haken gesetzt = das Wort wird im Spiel
-   gefragt, Haken weg = es kommt nicht vor. Das Wort selbst muss dabei
-   gespeichert bleiben (keine Löschung), damit Punkte/Historie/Wörter nie
-   verloren gehen. Das steuert overlay.hidden und gilt für eigene UND
-   eingebaute Wörter.
+   Hintergrund: ein Kästchen-Ansatz wurde vom Nutzer verworfen — gewünscht sind
+   klare Knöpfe pro Wort. "Ausblenden" blendet ein Wort nur aus (overlay.hidden),
+   löscht es nicht; "Einblenden" macht es rückgängig. Das Wort selbst bleibt in
+   jedem Fall gespeichert.
 */
 const fs = require('fs');
 const src = fs.readFileSync(__dirname + '/game_english.js', 'utf8');
@@ -12,29 +12,35 @@ const src = fs.readFileSync(__dirname + '/game_english.js', 'utf8');
 let fails = 0;
 function chk(cond, msg) { if (!cond) { console.error('FEHLER: ' + msg); fails++; } }
 
-// --- 1. toggleActive existiert und ist exportiert ---
-chk(/function toggleActive\(enKey, active\) \{/.test(src), 'toggleActive fehlt');
-chk(/toggleActive: toggleActive/.test(src), 'toggleActive ist nicht aus EN exportiert');
-
-// --- 2. toggleActive steuert overlay.hidden korrekt (an = raus, aus = rein) ---
-const togFn = src.match(/function toggleActive\(enKey, active\) \{[\s\S]*?\n  \}/)[0];
-chk(/var k = normKey\(enKey\);/.test(togFn), 'toggleActive normalisiert den Schlüssel nicht');
-chk(/overlay\.hidden\.splice\(idx, 1\)/.test(togFn), 'toggleActive entfernt bei Haken nicht aus hidden');
-chk(/overlay\.hidden\.push\(k\)/.test(togFn), 'toggleActive blendet bei fehlendem Haken nicht aus');
-chk(/saveOverlay\(/.test(togFn), 'toggleActive speichert das Overlay (Cloud+lokal) nicht');
-// Niemals ein Wort tatsächlich löschen:
-chk(!/overlay\.custom\.splice/.test(togFn) && !/overlay\.custom\s*=/.test(togFn),
-    'toggleActive darf keine Wörter löschen (nur ein-/ausblenden)');
-
-// --- 3. Jede Zeile (eigen + eingebaut) hat ein Kästchen mit onchange -> toggleActive ---
 const renderFn = src.match(/function renderWordList\(\) \{[\s\S]*?\n  \}/)[0];
-const toggleCount = (renderFn.match(/EN\.toggleActive\(/g) || []).length;
-chk(toggleCount >= 2, 'Kästchen fehlt bei eigenen und/oder eingebauten Wörtern (EN.toggleActive < 2x)');
-chk(/type="checkbox"/.test(renderFn), 'Kein Checkbox-Element in der Wortliste');
 
-// --- 4. Haken-Zustand spiegelt isHidden (nicht ausgeblendet = angehakt) ---
-chk(/isHidden\(c\.en\) \? '' : ' checked'/.test(renderFn), 'Eigenes Wort: checked-Zustand folgt isHidden nicht');
-chk(/isHidden\(vb\.en\) \? '' : ' checked'/.test(renderFn), 'Eingebautes Wort: checked-Zustand folgt isHidden nicht');
+// --- 1. Keine Checkbox mehr, kein toggleActive mehr ---
+chk(!/type="checkbox"/.test(renderFn), 'Es gibt noch eine Checkbox statt Buttons');
+chk(!/function toggleActive\(/.test(src), 'toggleActive sollte entfernt sein (Button-Ansatz statt Kästchen)');
+chk(!/toggleActive: toggleActive/.test(src), 'toggleActive ist noch exportiert');
+
+// --- 2. Eigene Wörter: Bearbeiten + Löschen + Ausblenden/Einblenden ---
+const customBlock = renderFn.match(/for \(i = 0; i < overlay\.custom\.length; i\+\+\) \{[\s\S]*?\n      \}/)[0];
+chk(/EN\.startEditCustom\(/.test(customBlock), 'Eigene Wörter: Bearbeiten-Knopf fehlt');
+chk(/EN\.deleteCustom\(/.test(customBlock), 'Eigene Wörter: Löschen-Knopf fehlt');
+chk(/EN\.hideWord\(/.test(customBlock), 'Eigene Wörter: Ausblenden-Knopf fehlt');
+chk(/EN\.showWord\(/.test(customBlock), 'Eigene Wörter: Einblenden-Knopf fehlt');
+chk(/cHidden/.test(customBlock), 'Eigene Wörter: Sichtbarkeitsstatus (isHidden) wird nicht geprüft');
+
+// --- 3. Eingebaute Wörter: Bearbeiten + Ausblenden/Einblenden (kein Löschen, da fix eingebaut) ---
+const builtinBlock = renderFn.match(/for \(i = 0; i < BUILTIN\.length; i\+\+\) \{[\s\S]*?\n    \}/)[0];
+chk(/EN\.startEditWord\(/.test(builtinBlock), 'Eingebaute Wörter: Bearbeiten-Knopf fehlt');
+chk(/EN\.hideWord\(/.test(builtinBlock), 'Eingebaute Wörter: Ausblenden-Knopf fehlt');
+chk(/EN\.showWord\(/.test(builtinBlock), 'Eingebaute Wörter: Einblenden-Knopf fehlt');
+chk(/vHidden/.test(builtinBlock), 'Eingebaute Wörter: Sichtbarkeitsstatus (isHidden) wird nicht geprüft');
+
+// --- 4. hideWord/showWord bleiben rein additiv auf overlay.hidden, löschen nichts ---
+const hideFn = src.match(/function hideWord\(enKey\) \{[\s\S]*?\n  \}/)[0];
+const showFn = src.match(/function showWord\(enKey\) \{[\s\S]*?\n  \}/)[0];
+chk(/overlay\.hidden\.push/.test(hideFn), 'hideWord trägt den Schlüssel nicht in overlay.hidden ein');
+chk(/overlay\.hidden\.splice/.test(showFn), 'showWord entfernt den Schlüssel nicht aus overlay.hidden');
+chk(!/overlay\.custom\.splice/.test(hideFn) && !/overlay\.custom\.splice/.test(showFn),
+    'hideWord/showWord dürfen keine Wörter löschen (nur ein-/ausblenden)');
 
 // --- 5. Overlay-Schema bleibt additiv (keine Datenverluste) ---
 chk(/overlay = \{ custom: \[\], hidden: \[\], edits: \{\} \}/.test(src),
