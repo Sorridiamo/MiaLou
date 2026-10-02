@@ -18,11 +18,10 @@ function chk(cond, msg) { if (!cond) { console.error('FEHLER: ' + msg); fails++;
 
 // --- 1. Eigene Wörter bekommen in der Liste einen Bearbeiten-Knopf ---
 const renderFn = src.match(/function renderWordList\(\) \{[\s\S]*?\n  \}/)[0];
-const customBlock = renderFn.match(/for \(i = 0; i < overlay\.custom\.length; i\+\+\) \{[\s\S]*?\n      \}/)[0];
-chk(/EN\.startEditCustom\(/.test(customBlock),
+chk(/EN\.' \+ \(r\.custom \? 'startEditCustom\(/.test(renderFn),
     'Eigene Wörter haben keinen Bearbeiten-Knopf (EN.startEditCustom fehlt in der Zeile)');
-chk(/EN\.deleteCustom\(/.test(customBlock),
-    'Löschen-Knopf bei eigenen Wörtern verschwunden');
+chk(/EN\.deleteCustom\(/.test(renderFn),
+    'Löschen (✕) bei eigenen Wörtern verschwunden');
 
 // --- 2. Es gibt getrennte Zustände für eingebaut vs. eigen ---
 chk(/var editingCustomIdx = null;/.test(src), 'editingCustomIdx fehlt (eigener Bearbeitungszustand)');

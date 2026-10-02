@@ -193,6 +193,18 @@
 .admin-row .small-btn { padding: 7px 12px; font-size: 13px; }
 .admin-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .enw-edited-tag { font-size: 11px; font-weight: 600; color: #8a7a6c; }
+.enw-x-btn {
+  width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; border: none;
+  background: #d9534f; color: #fff; font-weight: 700; font-size: 15px; line-height: 1;
+  cursor: pointer; padding: 0;
+}
+.enw-circle {
+  width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
+  border: 2px solid #c9a24a; background: transparent; cursor: pointer; padding: 0;
+}
+.enw-circle-on { background: #e8a33d; }
+.enw-circle-off { background: transparent; }
+
 
 .admin-pin-box {
   margin-top: 20px; padding-top: 18px; border-top: 2px solid #e4dccf;

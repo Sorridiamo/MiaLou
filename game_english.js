@@ -888,43 +888,35 @@ var EN = (function () {
     if (!wrap) return;
     var html = '', i;
 
-    html += '<p class="form-hint">„Löschen"/„Ausblenden" entfernt ein Wort nur aus dem Spiel (bleibt aber gespeichert). „Einblenden" macht es wieder rückgängig.</p>';
+    html += '<p class="form-hint">✕ löscht ein eigenes Wort ganz. Der Kreis blendet ein Wort im Spiel ein (farbig) oder aus (nur Rand) — gespeichert bleibt es immer.</p>';
 
-    html += '<h3 class="stats-h">Eigene Wörter (' + overlay.custom.length + ')</h3>';
-    if (overlay.custom.length === 0) {
-      html += '<p class="form-hint">Noch keine eigenen Wörter hinzugefügt.</p>';
-    } else {
-      for (i = 0; i < overlay.custom.length; i++) {
-        var c = overlay.custom[i], cHidden = isHidden(c.en);
-        html += '<div class="admin-row">' +
-          '<span class="admin-name">' + esc(c.de) + ' — <strong>' + esc(c.en) + '</strong>' +
-          (cHidden ? ' <span class="enw-edited-tag">(ausgeblendet)</span>' : '') +
-          (c.sentence ? '<br><span class="enw-sentence">' + esc(c.sentence) + '</span>' : '') + '</span>' +
-          '<span class="admin-row-actions">' +
-          '<button class="small-btn" onclick="EN.startEditCustom(' + i + ')">Bearbeiten</button>' +
-          '<button class="small-btn small-btn-danger" onclick="EN.deleteCustom(' + i + ')">Löschen</button>' +
-          (cHidden
-            ? '<button class="small-btn" onclick="EN.showWord(\'' + esc(normKey(c.en)) + '\')">Einblenden</button>'
-            : '<button class="small-btn" onclick="EN.hideWord(\'' + esc(normKey(c.en)) + '\')">Ausblenden</button>') +
-          '</span></div>';
-      }
+    var rows = [];
+    for (i = 0; i < overlay.custom.length; i++) {
+      var c = overlay.custom[i];
+      rows.push({ custom: true, idx: i, de: c.de, en: c.en, sentence: c.sentence, edited: false, hidden: isHidden(c.en) });
     }
-
-    html += '<h3 class="stats-h">Eingebaute Wörter (' + BUILTIN.length + ')</h3>';
     for (i = 0; i < BUILTIN.length; i++) {
       var vb = BUILTIN[i], ved = getEdit(vb.en), vShow = ved ? { de: ved.de || vb.de, en: ved.en || vb.en, sentence: ved.sentence || vb.sentence } : vb;
-      var vHidden = isHidden(vb.en);
-      html += '<div class="admin-row">' +
-        '<span class="admin-name">' + esc(vShow.de) + ' — <strong>' + esc(vShow.en) + '</strong>' +
-        (ved ? ' <span class="enw-edited-tag">(bearbeitet)</span>' : '') +
-        (vHidden ? ' <span class="enw-edited-tag">(ausgeblendet)</span>' : '') +
-        (vShow.sentence ? '<br><span class="enw-sentence">' + esc(vShow.sentence) + '</span>' : '') + '</span>' +
-        '<span class="admin-row-actions">' +
-        '<button class="small-btn" onclick="EN.startEditWord(\'' + esc(normKey(vb.en)) + '\')">Bearbeiten</button>' +
-        (vHidden
-          ? '<button class="small-btn" onclick="EN.showWord(\'' + esc(normKey(vb.en)) + '\')">Einblenden</button>'
-          : '<button class="small-btn small-btn-danger" onclick="EN.hideWord(\'' + esc(normKey(vb.en)) + '\')">Löschen</button>') +
-        '</span></div>';
+      rows.push({ custom: false, key: normKey(vb.en), de: vShow.de, en: vShow.en, sentence: vShow.sentence, edited: !!ved, hidden: isHidden(vb.en) });
+    }
+
+    if (rows.length === 0) {
+      html += '<p class="form-hint">Noch keine Wörter vorhanden.</p>';
+    } else {
+      for (i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var key = r.custom ? normKey(r.en) : r.key;
+        html += '<div class="admin-row">' +
+          '<span class="admin-name">' + esc(r.de) + ' — <strong>' + esc(r.en) + '</strong>' +
+          (r.edited ? ' <span class="enw-edited-tag">(bearbeitet)</span>' : '') +
+          (r.hidden ? ' <span class="enw-edited-tag">(ausgeblendet)</span>' : '') +
+          (r.sentence ? '<br><span class="enw-sentence">' + esc(r.sentence) + '</span>' : '') + '</span>' +
+          '<span class="admin-row-actions">' +
+          '<button class="small-btn" onclick="EN.' + (r.custom ? 'startEditCustom(' + r.idx + ')' : 'startEditWord(\'' + esc(key) + '\')') + '">Bearbeiten</button>' +
+          (r.custom ? '<button class="enw-x-btn" title="Wort löschen" onclick="EN.deleteCustom(' + r.idx + ')">✕</button>' : '') +
+          '<button class="enw-circle' + (r.hidden ? ' enw-circle-off' : ' enw-circle-on') + '" title="' + (r.hidden ? 'Einblenden (wird wieder gefragt)' : 'Ausblenden (wird nicht mehr gefragt)') + '" onclick="EN.' + (r.hidden ? 'showWord' : 'hideWord') + '(\'' + esc(key) + '\')"></button>' +
+          '</span></div>';
+      }
     }
     wrap.innerHTML = html;
   }
