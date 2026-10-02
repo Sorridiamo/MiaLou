@@ -27,12 +27,15 @@ chk(/EN\.hideWord\(/.test(customBlock), 'Eigene Wörter: Ausblenden-Knopf fehlt'
 chk(/EN\.showWord\(/.test(customBlock), 'Eigene Wörter: Einblenden-Knopf fehlt');
 chk(/cHidden/.test(customBlock), 'Eigene Wörter: Sichtbarkeitsstatus (isHidden) wird nicht geprüft');
 
-// --- 3. Eingebaute Wörter: Bearbeiten + Ausblenden/Einblenden (kein Löschen, da fix eingebaut) ---
+// --- 3. Eingebaute Wörter: Bearbeiten + Löschen/Einblenden (echtes Löschen aus dem
+//        Code ist nicht möglich/sinnvoll, da fix eingebaut -> "Löschen" nutzt denselben
+//        sicheren Ausblenden-Mechanismus wie bei eigenen Wörtern) ---
 const builtinBlock = renderFn.match(/for \(i = 0; i < BUILTIN\.length; i\+\+\) \{[\s\S]*?\n    \}/)[0];
 chk(/EN\.startEditWord\(/.test(builtinBlock), 'Eingebaute Wörter: Bearbeiten-Knopf fehlt');
-chk(/EN\.hideWord\(/.test(builtinBlock), 'Eingebaute Wörter: Ausblenden-Knopf fehlt');
+chk(/EN\.hideWord\(/.test(builtinBlock), 'Eingebaute Wörter: Löschen-Knopf (hideWord) fehlt');
 chk(/EN\.showWord\(/.test(builtinBlock), 'Eingebaute Wörter: Einblenden-Knopf fehlt');
 chk(/vHidden/.test(builtinBlock), 'Eingebaute Wörter: Sichtbarkeitsstatus (isHidden) wird nicht geprüft');
+chk(/>Löschen<\/button>/.test(builtinBlock), 'Eingebaute Wörter: Knopf heisst nicht "Löschen"');
 
 // --- 4. hideWord/showWord bleiben rein additiv auf overlay.hidden, löschen nichts ---
 const hideFn = src.match(/function hideWord\(enKey\) \{[\s\S]*?\n  \}/)[0];

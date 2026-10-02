@@ -888,7 +888,7 @@ var EN = (function () {
     if (!wrap) return;
     var html = '', i;
 
-    html += '<p class="form-hint">„Ausblenden" = das Wort kommt im Spiel nicht vor (bleibt aber gespeichert). „Einblenden" macht es wieder rückgängig.</p>';
+    html += '<p class="form-hint">„Löschen"/„Ausblenden" entfernt ein Wort nur aus dem Spiel (bleibt aber gespeichert). „Einblenden" macht es wieder rückgängig.</p>';
 
     html += '<h3 class="stats-h">Eigene Wörter (' + overlay.custom.length + ')</h3>';
     if (overlay.custom.length === 0) {
@@ -923,7 +923,7 @@ var EN = (function () {
         '<button class="small-btn" onclick="EN.startEditWord(\'' + esc(normKey(vb.en)) + '\')">Bearbeiten</button>' +
         (vHidden
           ? '<button class="small-btn" onclick="EN.showWord(\'' + esc(normKey(vb.en)) + '\')">Einblenden</button>'
-          : '<button class="small-btn" onclick="EN.hideWord(\'' + esc(normKey(vb.en)) + '\')">Ausblenden</button>') +
+          : '<button class="small-btn small-btn-danger" onclick="EN.hideWord(\'' + esc(normKey(vb.en)) + '\')">Löschen</button>') +
         '</span></div>';
     }
     wrap.innerHTML = html;
