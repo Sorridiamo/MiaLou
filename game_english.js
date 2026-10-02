@@ -888,7 +888,7 @@ var EN = (function () {
     if (!wrap) return;
     var html = '', i;
 
-    html += '<p class="form-hint">✕ löscht ein eigenes Wort ganz. Der Kreis blendet ein Wort im Spiel ein (farbig) oder aus (nur Rand) — gespeichert bleibt es immer.</p>';
+    html += '<p class="form-hint">✕ entfernt ein Wort aus der Liste (eigene Wörter ganz, bearbeitete eingebaute Wörter werden zurückgesetzt und ausgeblendet). Der Kreis blendet ein Wort im Spiel ein (farbig) oder aus (nur Rand) — nichts geht dabei verloren.</p>';
 
     var rows = [];
     for (i = 0; i < overlay.custom.length; i++) {
@@ -913,7 +913,7 @@ var EN = (function () {
           (r.sentence ? '<br><span class="enw-sentence">' + esc(r.sentence) + '</span>' : '') + '</span>' +
           '<span class="admin-row-actions">' +
           '<button class="small-btn" onclick="EN.' + (r.custom ? 'startEditCustom(' + r.idx + ')' : 'startEditWord(\'' + esc(key) + '\')') + '">Bearbeiten</button>' +
-          (r.custom ? '<button class="enw-x-btn" title="Wort löschen" onclick="EN.deleteCustom(' + r.idx + ')">✕</button>' : '') +
+          '<button class="enw-x-btn" title="Wort entfernen" onclick="EN.' + (r.custom ? 'deleteCustom(' + r.idx + ')' : 'resetAndHideWord(\'' + esc(key) + '\')') + '">✕</button>' +
           '<button class="enw-circle' + (r.hidden ? ' enw-circle-off' : ' enw-circle-on') + '" title="' + (r.hidden ? 'Einblenden (wird wieder gefragt)' : 'Ausblenden (wird nicht mehr gefragt)') + '" onclick="EN.' + (r.hidden ? 'showWord' : 'hideWord') + '(\'' + esc(key) + '\')"></button>' +
           '</span></div>';
       }
@@ -1037,6 +1037,22 @@ var EN = (function () {
     });
   }
 
+  // ✕ bei eingebauten Wörtern: ein echtes Löschen aus dem Code ist nicht möglich
+  // (das wäre für alle Kinder/Geräte weg). Deshalb: eine eigene Bearbeitung
+  // dieses Worts (overlay.edits) wird zurückgenommen und das Wort zusätzlich
+  // ausgeblendet — für den Elternteil fühlt es sich wie "entfernt" an, ohne dass
+  // der eingebaute Wortschatz selbst angetastet wird. Punkte/Historie bleiben
+  // unberührt.
+  function resetAndHideWord(enKey) {
+    var k = normKey(enKey);
+    if (overlay.edits.hasOwnProperty(k)) delete overlay.edits[k];
+    if (overlay.hidden.indexOf(k) < 0) overlay.hidden.push(k);
+    renderWordList();
+    saveOverlay(function (hint) {
+      setWordsMsg(hint ? ('Entfernt. Hinweis: ' + hint) : 'Entfernt.', true);
+    });
+  }
+
   return {
     // Spiel
     selectMode: selectMode,
@@ -1056,6 +1072,7 @@ var EN = (function () {
     deleteCustom: deleteCustom,
     hideWord: hideWord,
     showWord: showWord,
+    resetAndHideWord: resetAndHideWord,
     startEditWord: startEditWord,
     startEditCustom: startEditCustom,
     cancelEditWord: cancelEditWord,

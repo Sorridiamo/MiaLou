@@ -20,7 +20,7 @@ function chk(cond, msg) { if (!cond) { console.error('FEHLER: ' + msg); fails++;
 const renderFn = src.match(/function renderWordList\(\) \{[\s\S]*?\n  \}/)[0];
 chk(/EN\.' \+ \(r\.custom \? 'startEditCustom\(/.test(renderFn),
     'Eigene Wörter haben keinen Bearbeiten-Knopf (EN.startEditCustom fehlt in der Zeile)');
-chk(/EN\.deleteCustom\(/.test(renderFn),
+chk(/r\.custom \? 'deleteCustom\(' \+ r\.idx/.test(renderFn),
     'Löschen (✕) bei eigenen Wörtern verschwunden');
 
 // --- 2. Es gibt getrennte Zustände für eingebaut vs. eigen ---
