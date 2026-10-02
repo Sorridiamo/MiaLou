@@ -92,6 +92,11 @@ var EN = (function () {
   // Wenn ein eingebautes Wort gerade bearbeitet wird: dessen Original-en (normKey).
   // null = das Formular fügt ein neues eigenes Wort hinzu.
   var editingKey = null;
+  // Wenn ein eigenes (hinzugefügtes) Wort bearbeitet wird: dessen Index in
+  // overlay.custom. null = kein eigenes Wort in Bearbeitung. Getrennt von
+  // editingKey, weil eigene Wörter direkt in overlay.custom liegen (nicht in
+  // overlay.edits wie die eingebauten).
+  var editingCustomIdx = null;
 
   var tasks = [], TOTAL = 0, queue = [];
   var correctCount = 0, wrongCount = 0, questionNumber = 0, answeredSinceBreak = 0;
@@ -809,6 +814,7 @@ var EN = (function () {
   function initWords() {
     setWordsMsg('');
     editingKey = null;
+    editingCustomIdx = null;
     var a = document.getElementById('enw-de'), b = document.getElementById('enw-en'), c = document.getElementById('enw-sentence');
     if (a) a.value = ''; if (b) b.value = ''; if (c) c.value = '';
     updateWordFormMode();
@@ -821,7 +827,8 @@ var EN = (function () {
     var title = document.getElementById('enw-form-title');
     var btn = document.getElementById('enw-submit-btn');
     var cancelBtn = document.getElementById('enw-cancel-btn');
-    if (editingKey) {
+    var editing = (editingKey !== null) || (editingCustomIdx !== null);
+    if (editing) {
       if (title) title.textContent = 'Wort bearbeiten';
       if (btn) btn.textContent = 'Änderungen speichern';
       if (cancelBtn) cancelBtn.classList.remove('hidden');
@@ -838,7 +845,25 @@ var EN = (function () {
       if (normKey(pool[i].builtinKey || pool[i].en) === enKey) { w = pool[i]; break; }
     }
     if (!w) return;
+    editingCustomIdx = null;
     editingKey = enKey;
+    var deEl = document.getElementById('enw-de'), enEl = document.getElementById('enw-en'), stEl = document.getElementById('enw-sentence');
+    if (deEl) deEl.value = w.de || '';
+    if (enEl) enEl.value = w.en || '';
+    if (stEl) stEl.value = w.sentence || '';
+    setWordsMsg('');
+    updateWordFormMode();
+    var form = document.getElementById('enw-form');
+    if (form && form.scrollIntoView) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Bearbeiten eines eigenen (hinzugefügten) Wortes. Füllt dasselbe Formular,
+  // merkt sich aber den Index in overlay.custom statt eines edits-Keys.
+  function startEditCustom(idx) {
+    if (idx < 0 || idx >= overlay.custom.length) return;
+    var w = overlay.custom[idx];
+    editingKey = null;
+    editingCustomIdx = idx;
     var deEl = document.getElementById('enw-de'), enEl = document.getElementById('enw-en'), stEl = document.getElementById('enw-sentence');
     if (deEl) deEl.value = w.de || '';
     if (enEl) enEl.value = w.en || '';
@@ -851,6 +876,7 @@ var EN = (function () {
 
   function cancelEditWord() {
     editingKey = null;
+    editingCustomIdx = null;
     var a = document.getElementById('enw-de'), b = document.getElementById('enw-en'), c = document.getElementById('enw-sentence');
     if (a) a.value = ''; if (b) b.value = ''; if (c) c.value = '';
     setWordsMsg('');
@@ -870,7 +896,10 @@ var EN = (function () {
         var c = overlay.custom[i];
         html += '<div class="admin-row"><span class="admin-name">' + esc(c.de) + ' — <strong>' + esc(c.en) + '</strong>' +
           (c.sentence ? '<br><span class="enw-sentence">' + esc(c.sentence) + '</span>' : '') + '</span>' +
-          '<button class="small-btn small-btn-danger" onclick="EN.deleteCustom(' + i + ')">Löschen</button></div>';
+          '<span class="admin-row-actions">' +
+          '<button class="small-btn" onclick="EN.startEditCustom(' + i + ')">Bearbeiten</button>' +
+          '<button class="small-btn small-btn-danger" onclick="EN.deleteCustom(' + i + ')">Löschen</button>' +
+          '</span></div>';
       }
     }
 
@@ -908,6 +937,7 @@ var EN = (function () {
     if (!de) { setWordsMsg('Bitte das deutsche Wort eintragen.'); return; }
     if (!en) { setWordsMsg('Bitte das englische Wort eintragen.'); return; }
 
+    if (editingCustomIdx !== null) { saveEditedCustom(de, en, st); return; }
     if (editingKey) { saveEditedWord(de, en, st); return; }
 
     // Schon vorhanden? (eingebaut oder eigen)
@@ -943,6 +973,44 @@ var EN = (function () {
       long: (en.indexOf(' ') >= 0 && en.split(' ').length > 2)
     };
     editingKey = null;
+    if (deEl) deEl.value = ''; if (enEl) enEl.value = ''; if (stEl) stEl.value = '';
+    updateWordFormMode();
+    renderWordList();
+    saveOverlay(function (hint) {
+      setWordsMsg(hint ? ('Gespeichert. Hinweis: ' + hint) : 'Gespeichert!', true);
+    });
+  }
+
+  // Speichert eine Bearbeitung an einem eigenen (hinzugefügten) Wort direkt in
+  // overlay.custom[idx]. Punkte/Historie bleiben unberührt — hier wird nur die
+  // Wortliste angepasst.
+  function saveEditedCustom(de, en, st) {
+    var idx = editingCustomIdx;
+    if (idx === null || idx < 0 || idx >= overlay.custom.length) {
+      editingCustomIdx = null;
+      updateWordFormMode();
+      return;
+    }
+    // Dublettenprüfung — das Wort darf nicht mit einem ANDEREN Eintrag
+    // kollidieren (sich selbst darf es natürlich behalten).
+    var i;
+    for (i = 0; i < overlay.custom.length; i++) {
+      if (i !== idx && normKey(overlay.custom[i].en) === normKey(en)) {
+        setWordsMsg('"' + en + '" ist bereits in der Liste.'); return;
+      }
+    }
+    for (i = 0; i < BUILTIN.length; i++) {
+      if (normKey(BUILTIN[i].en) === normKey(en) && !isHidden(en)) {
+        setWordsMsg('"' + en + '" ist schon eingebaut.'); return;
+      }
+    }
+
+    overlay.custom[idx] = {
+      de: de, en: en, sentence: st,
+      long: (en.indexOf(' ') >= 0 && en.split(' ').length > 2)
+    };
+    editingCustomIdx = null;
+    var deEl = document.getElementById('enw-de'), enEl = document.getElementById('enw-en'), stEl = document.getElementById('enw-sentence');
     if (deEl) deEl.value = ''; if (enEl) enEl.value = ''; if (stEl) stEl.value = '';
     updateWordFormMode();
     renderWordList();
@@ -999,6 +1067,7 @@ var EN = (function () {
     hideWord: hideWord,
     showWord: showWord,
     startEditWord: startEditWord,
+    startEditCustom: startEditCustom,
     cancelEditWord: cancelEditWord,
     getWords: getWords
   };
