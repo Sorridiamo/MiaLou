@@ -15,7 +15,7 @@ var firebaseConfig = {
 // Sichtbare Versionsnummer: erscheint klein auf dem Startscreen. Damit sieht
 // man sofort, ob der Browser wirklich die neue Fassung geladen hat oder noch
 // eine alte aus dem Cache.
-var APP_VERSION = 'v3.9';
+var APP_VERSION = 'v3.10';
 
 // Diagnose: hier landet der letzte Verbindungsfehler in Klartext, damit er in
 // der App angezeigt werden kann (statt nur in der Browser-Konsole).
@@ -38,6 +38,22 @@ var FB_READY = (function () {
 
   try {
     firebase.initializeApp(firebaseConfig);
+    // App Check: sorgt dafür, dass nur die echte Spielkiste-Seite (sorridiamo.github.io)
+    // auf die Datenbank zugreifen kann, auch wenn jemand die obigen Zugangsdaten
+    // (apiKey, projectId, ...) im öffentlichen GitHub-Code findet. Ohne gültiges
+    // App-Check-Token von genau dieser Seite lehnt Firebase die Anfrage ab.
+    // Site-Key aus der Firebase-Konsole (App Check -> Fraud Defense / reCAPTCHA Enterprise).
+    try {
+      firebase.appCheck().activate(
+        new firebase.appCheck.ReCaptchaEnterpriseProvider('6LcfV-AtAAAAAJMahVyFSsMuQ3qgdeCfHsVlblBg'),
+        true // Token automatisch im Hintergrund erneuern
+      );
+    } catch (acErr) {
+      // Wenn App Check aus irgendeinem Grund nicht initialisiert werden kann (z.B.
+      // altes Browser-Feature fehlt), läuft die App trotzdem weiter wie bisher —
+      // nur ohne den zusätzlichen Schutz. Kein harter Fehler für das Kind.
+      console.warn('App Check konnte nicht aktiviert werden:', acErr);
+    }
   } catch (e) {
     // Firebase SDK nicht verfügbar (z.B. offline) — App läuft dann nur mit localStorage weiter
     console.warn('Firebase konnte nicht initialisiert werden:', e);
