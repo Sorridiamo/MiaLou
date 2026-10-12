@@ -191,8 +191,8 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 .ht-numberline-wrap { width: 100%; padding: 36px 0 28px; }
 .ht-numberline { position: relative; height: 3px; background: #9a8b7d; border-radius: 2px; margin: 0; }
 .ht-nl-label { position: absolute; top: -31px; font-size: 19px; font-weight: 800; color: #4a3f36; white-space: nowrap; }
-.ht-nl-label-start { left: 0%; transform: translateX(0); }
-.ht-nl-label-end { left: 100%; transform: translateX(-100%); }
+.ht-nl-label-start { left: 0%; transform: translateX(-50%); }
+.ht-nl-label-end { left: 100%; transform: translateX(-50%); }
 .ht-nl-tick { position: absolute; top: -6px; width: 2px; height: 12px; background: #c9bba9; transform: translateX(-50%); }
 .ht-nl-tick-mid { height: 16px; top: -8px; background: #a89a89; }
 .ht-nl-tick-major { width: 3px; height: 18px; top: -9px; background: #4a3f36; }
