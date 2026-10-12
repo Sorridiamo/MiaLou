@@ -70,6 +70,7 @@ var HT = (function () {
   var current = null;           // aktuelle Aufgabe { n, mode }
   var digits = ['', '', '', '', '', ''];
   var active = 0;
+  var attempt = 0;               // 0 = erster Versuch, 1 = Korrekturversuch
 
   // DOM
   var scoreText, progressFill, questionArea, mouseImg, particlesEl;
@@ -153,6 +154,29 @@ var HT = (function () {
     }
     if (r > 0) s += sub1000(r);
     return s;
+  }
+
+  // Zerlegt das Zahlwort in zwei Teile: den Tausender-Teil (passt zu den
+  // ersten drei Kästchen HT/ZT/T) und den Rest (passt zu H/Z/E). Wird für
+  // die zweifarbige Anzeige gebraucht, damit das Kind sieht, welcher
+  // Textabschnitt zu welchen Kästchen gehört.
+  function numberToWordsParts(n) {
+    if (n === 0) return { thousands: 'null', ones: '' };
+    var th = Math.floor(n / 1000), r = n % 1000;
+    var thousands = th > 0 ? (sub1000(th).replace(/eins$/, 'ein') + 'tausend') : '';
+    var ones = r > 0 ? sub1000(r) : '';
+    return { thousands: thousands, ones: ones };
+  }
+
+  // Zweifarbige HTML-Darstellung des Zahlworts: Tausender-Teil (bis inkl.
+  // "tausend") in einer Farbe, Rest (Hunderter/Zehner/Einer) in einer anderen.
+  function numberToWordsHtml(n) {
+    var p = numberToWordsParts(n);
+    var html = '';
+    if (p.thousands) html += '<span class="ht-word-thousands">' + esc(p.thousands) + '</span>';
+    if (p.ones) html += '<span class="ht-word-ones">' + esc(p.ones) + '</span>';
+    if (!html) html = esc(numberToWords(n));
+    return html;
   }
 
   // === Zufallszahl: meist 6-stellig (Hunderttausender), manchmal 5-stellig ===
@@ -474,7 +498,7 @@ var HT = (function () {
       taskDisplay.textContent = decompose(current.n);
     } else if (current.mode === 'wort') {
       taskDisplay.className = 'ht-task-display ht-task-word';
-      taskDisplay.textContent = numberToWords(current.n);
+      taskDisplay.innerHTML = numberToWordsHtml(current.n);
     } else {
       taskDisplay.className = 'ht-task-display ht-task-tokens';
       taskDisplay.textContent = tokensStr(current.n);
@@ -482,6 +506,7 @@ var HT = (function () {
 
     digits = ['', '', '', '', '', ''];
     active = 0;
+    attempt = 0;
     renderCells();
     feedback.className = 'hidden'; feedback.innerHTML = '';
     explainBox.className = 'hidden'; explainBox.innerHTML = '';
@@ -491,6 +516,7 @@ var HT = (function () {
   function numpad(val) {
     if (locked) return;
     if (val === 'del') {
+      feedback.className = 'hidden'; feedback.innerHTML = '';
       if (digits[active] !== '') { digits[active] = ''; }
       else if (active > 0) { active--; digits[active] = ''; }
       renderCells();
@@ -502,18 +528,16 @@ var HT = (function () {
       return;
     }
     // Ziffer
+    feedback.className = 'hidden'; feedback.innerHTML = '';
     digits[active] = val;
     if (active < 5) active++;
     renderCells();
   }
 
   function checkAnswer() {
-    locked = true;
-    var taskIdx = queue[0];
     var correct = digitsOf(current.n);
     var ans = digits.join('');
     var ok = (ans === correct);
-    queue.shift(); answeredSinceBreak++;
 
     // Kästchen einfärben (richtig/falsch pro Stelle)
     for (var i = 0; i < 6; i++) {
@@ -524,6 +548,9 @@ var HT = (function () {
     }
 
     if (ok) {
+      locked = true;
+      var taskIdx = queue[0];
+      queue.shift(); answeredSinceBreak++;
       correctCount++;
       feedback.innerHTML = 'Richtig!'; feedback.className = 'correct-fb';
       updateScore(); setMouseImage(mouseCorrect, true);
@@ -534,20 +561,38 @@ var HT = (function () {
       else { spawnParticles(10); spawnConfetti(20); }
       if (correctCount === TOTAL) setTimeout(function () { spawnFinalCelebration(); }, 300);
       setTimeout(function () { loadQuestion(); }, 1600);
-    } else {
-      wrongCount++; recordError(current.n);
-      feedback.innerHTML = '<div class="wrong-answer-line">Nicht ganz. Die Zahl ist ' + fmt(current.n) + '.</div>';
-      feedback.className = 'wrong-fb wrong-fb-path';
-      explainBox.className = 'ht-explain';
-      explainBox.innerHTML =
-        '<div class="rule-title">So sieht die Zahl in der Tafel aus:</div>' +
-        '<div class="rule-text">' + explainTable(current.n) + '</div>' +
-        '<div class="rule-text">Das ist ' + decompose(current.n) + '.</div>';
-      queue.push(taskIdx);
+      return;
+    }
+
+    if (attempt === 0) {
+      // Erster Fehlversuch: einmal korrigieren lassen, bevor die Lösung
+      // gezeigt und die Aufgabe als falsch gewertet wird.
+      attempt = 1;
+      locked = false;
+      for (var j = 0; j < 6; j++) { if (digits[j] !== correct.charAt(j)) { active = j; break; } }
+      feedback.innerHTML = 'Fast! Verbessere die rot markierten Kästchen und versuch es noch einmal.';
+      feedback.className = 'wrong-fb';
       setMouseImage(mouseSad, true);
       setTimeout(function () { setMouseImage(mouseCorrect, true); }, 1400);
-      setTimeout(function () { loadQuestion(); }, 4500);
+      return;
     }
+
+    // Zweiter Fehlversuch: Aufgabe gilt als falsch, Lösung wird erklärt.
+    locked = true;
+    var taskIdx2 = queue[0];
+    queue.shift(); answeredSinceBreak++;
+    wrongCount++; recordError(current.n);
+    feedback.innerHTML = '<div class="wrong-answer-line">Nicht ganz. Die Zahl ist ' + fmt(current.n) + '.</div>';
+    feedback.className = 'wrong-fb wrong-fb-path';
+    explainBox.className = 'ht-explain';
+    explainBox.innerHTML =
+      '<div class="rule-title">So sieht die Zahl in der Tafel aus:</div>' +
+      '<div class="rule-text">' + explainTable(current.n) + '</div>' +
+      '<div class="rule-text">Das ist ' + decompose(current.n) + '.</div>';
+    queue.push(taskIdx2);
+    setMouseImage(mouseSad, true);
+    setTimeout(function () { setMouseImage(mouseCorrect, true); }, 1400);
+    setTimeout(function () { loadQuestion(); }, 4500);
   }
 
   // Kleine Textdarstellung der richtigen Tafel: "HT 3 · ZT 1 · T 9 · H 5 · Z 4 · E 3"
