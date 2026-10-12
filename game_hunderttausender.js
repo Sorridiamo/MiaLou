@@ -221,13 +221,18 @@ var HT = (function () {
   // Zeichnet den Zahlenstrahl als HTML (reines CSS, keine Bilder).
   function renderNumberLine(start, end, tickIndex) {
     var ticks = '';
-    for (var i = 1; i <= 9; i++) {
-      ticks += '<div class="ht-nl-tick" style="left:' + (i * 10) + '%"></div>';
+    for (var i = 0; i <= 10; i++) {
+      var cls = 'ht-nl-tick';
+      if (i === 0 || i === 10) cls += ' ht-nl-tick-major';
+      else if (i === 5) cls += ' ht-nl-tick-mid';
+      ticks += '<div class="' + cls + '" style="left:' + (i * 10) + '%"></div>';
     }
     var markerPct = tickIndex * 10;
     return '<div class="ht-numberline-wrap">' +
-      '<div class="ht-nl-labels"><span>' + fmt(start) + '</span><span>' + fmt(end) + '</span></div>' +
-      '<div class="ht-numberline">' + ticks +
+      '<div class="ht-numberline">' +
+      '<span class="ht-nl-label ht-nl-label-start">' + fmt(start) + '</span>' +
+      '<span class="ht-nl-label ht-nl-label-end">' + fmt(end) + '</span>' +
+      ticks +
       '<div class="ht-nl-marker" style="left:' + markerPct + '%">▲</div>' +
       '</div></div>';
   }

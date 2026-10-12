@@ -188,10 +188,14 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 
 /* Aufgabentyp "Zahlenstrahl" */
 .ht-task-zahlenstrahl { flex-direction: column; max-width: 480px; width: 100%; }
-.ht-numberline-wrap { width: 100%; padding: 6px 10px 28px; }
-.ht-nl-labels { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; color: #4a3f36; margin-bottom: 10px; }
-.ht-numberline { position: relative; height: 3px; background: #9a8b7d; border-radius: 2px; margin: 0 2px; }
+.ht-numberline-wrap { width: 100%; padding: 36px 0 28px; }
+.ht-numberline { position: relative; height: 3px; background: #9a8b7d; border-radius: 2px; margin: 0; }
+.ht-nl-label { position: absolute; top: -31px; font-size: 19px; font-weight: 800; color: #4a3f36; white-space: nowrap; }
+.ht-nl-label-start { left: 0%; transform: translateX(0); }
+.ht-nl-label-end { left: 100%; transform: translateX(-100%); }
 .ht-nl-tick { position: absolute; top: -6px; width: 2px; height: 12px; background: #c9bba9; transform: translateX(-50%); }
+.ht-nl-tick-mid { height: 16px; top: -8px; background: #a89a89; }
+.ht-nl-tick-major { width: 3px; height: 18px; top: -9px; background: #4a3f36; }
 .ht-nl-marker { position: absolute; top: 6px; transform: translateX(-50%); font-size: 20px; line-height: 1; color: #c47a2e; }
 
 /* Stellenwerttafel-Eingabe */
