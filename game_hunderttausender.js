@@ -162,29 +162,6 @@ var HT = (function () {
     return s;
   }
 
-  // Zerlegt das Zahlwort in zwei Teile: den Tausender-Teil (passt zu den
-  // ersten drei Kästchen HT/ZT/T) und den Rest (passt zu H/Z/E). Wird für
-  // die zweifarbige Anzeige gebraucht, damit das Kind sieht, welcher
-  // Textabschnitt zu welchen Kästchen gehört.
-  function numberToWordsParts(n) {
-    if (n === 0) return { thousands: 'null', ones: '' };
-    var th = Math.floor(n / 1000), r = n % 1000;
-    var thousands = th > 0 ? (sub1000(th).replace(/eins$/, 'ein') + 'tausend') : '';
-    var ones = r > 0 ? sub1000(r) : '';
-    return { thousands: thousands, ones: ones };
-  }
-
-  // Zweifarbige HTML-Darstellung des Zahlworts: Tausender-Teil (bis inkl.
-  // "tausend") in einer Farbe, Rest (Hunderter/Zehner/Einer) in einer anderen.
-  function numberToWordsHtml(n) {
-    var p = numberToWordsParts(n);
-    var html = '';
-    if (p.thousands) html += '<span class="ht-word-thousands">' + esc(p.thousands) + '</span>';
-    if (p.ones) html += '<span class="ht-word-ones">' + esc(p.ones) + '</span>';
-    if (!html) html = esc(numberToWords(n));
-    return html;
-  }
-
   // === Zufallszahl: meist 6-stellig (Hunderttausender), manchmal 5-stellig ===
   function generateNumber() {
     if (Math.random() < 0.7) return 100000 + Math.floor(Math.random() * 900000); // 100'000–999'999
@@ -568,7 +545,7 @@ var HT = (function () {
       taskDisplay.textContent = decompose(current.n);
     } else if (current.mode === 'wort') {
       taskDisplay.className = 'ht-task-display ht-task-word';
-      taskDisplay.innerHTML = numberToWordsHtml(current.n);
+      taskDisplay.textContent = numberToWords(current.n);
     } else if (current.mode === 'nachbar') {
       taskDisplay.className = 'ht-task-display ht-task-nachbar';
       taskDisplay.innerHTML =

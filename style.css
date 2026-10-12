@@ -178,13 +178,8 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 /* Aufgaben-Anzeige (Summe / Zahlwort / Stellenwert-Teile) */
 .ht-task-display { font-weight: 700; color: #4a3f36; max-width: 420px; line-height: 1.4; word-break: break-word; min-height: 44px; display: flex; align-items: center; justify-content: center; text-align: center; }
 .ht-task-sum { font-size: 26px; letter-spacing: 0.5px; }
-.ht-task-word { font-size: 22px; }
+.ht-task-word { font-size: 22px; color: #b05a86; }
 .ht-task-tokens { font-size: 28px; letter-spacing: 1px; color: #5b4a8a; }
-
-/* Zweifarbige Zahlwort-Anzeige: Tausender-Teil (passt zu HT/ZT/T) vs. Rest
-   (passt zu H/Z/E) — hilft dem Kind, Text und Kästchen zuzuordnen. */
-.ht-word-thousands { color: #3a6ea5; }
-.ht-word-ones { color: #c47a2e; }
 
 /* Aufgabentyp "Nachbarzahlen" */
 .ht-task-nachbar { flex-direction: column; gap: 6px; }
