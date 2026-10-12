@@ -92,6 +92,17 @@ var STATS = (function () {
       wrongField: 'wrongTasks',
       describeWrong: function (w) { return String(w); },
       errorLabel: function (e) { return String((e && e.word) || e); }
+    },
+    {
+      key: 'hunderttausender', label: 'Hunderttausender',
+      historyKey: 'hunderttausender_history', errorsKey: 'hunderttausender_errors',
+      countField: 'totalTasks',
+      wrongField: 'wrongTasks',
+      describeWrong: function (w) { return String(w); },
+      errorLabel: function (e) {
+        var n = (e && typeof e.n !== 'undefined') ? e.n : e;
+        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '’');
+      }
     }
   ];
 

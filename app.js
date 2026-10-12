@@ -307,7 +307,8 @@ var APP = (function() {
     'minus_errors', 'minus_history',
     'rechtschreibung_errors', 'rechtschreibung_history',
     'english_errors', 'english_history',
-    'geld_errors', 'geld_history'
+    'geld_errors', 'geld_history',
+    'hunderttausender_errors', 'hunderttausender_history'
   ];
 
   function collectGameData() {
@@ -449,7 +450,7 @@ var APP = (function() {
     } else {
       txt += ' — noch ' + toNext + ' bis zum nächsten Preis';
     }
-    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','ge-points','worlds-points','shop-points'];
+    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','ge-points','ht-points','worlds-points','shop-points'];
     for (var i = 0; i < ids.length; i++) {
       var el = document.getElementById(ids[i]);
       if (el) el.textContent = txt;
@@ -497,7 +498,7 @@ var APP = (function() {
     var toNext = getPointsToNextPrize();
     var txt = points + ' Punkte';
     txt += (available > 0) ? (' — ' + available + ' Preis' + (available > 1 ? 'e' : '') + ' verfügbar!') : (' — noch ' + toNext + ' bis zum nächsten Preis');
-    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','ge-points','worlds-points','shop-points'];
+    var ids = ['home-points','em-points','dr-points','pl-points','mi-points','rs-points','en-points','ge-points','ht-points','worlds-points','shop-points'];
     for (var i = 0; i < ids.length; i++) {
       var el = document.getElementById(ids[i]);
       if (el) el.textContent = txt;
@@ -588,6 +589,7 @@ var APP = (function() {
     if (screen === 'en-start') { EN.initStart(); }
     if (screen === 'en-words') { EN.initWords(); }
     if (screen === 'ge-start') { GE.initStart(); }
+    if (screen === 'ht-start') { HT.initStart(); }
     if (screen === 'shop') { renderShop(); }
     if (screen === 'worlds') { renderWorlds(); }
     if (screen === 'profile-select') { PROFILES.renderProfileSelect(); }

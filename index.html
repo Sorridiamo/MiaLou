@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=38">
-  <link rel="stylesheet" href="style_profiles.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style_profiles.css?v=39">
 </head>
 <body>
 <div id="app">
@@ -191,6 +191,7 @@
       <button class="home-btn home-btn-blue" onclick="APP.goTo('rs-start')">Rechtschreibung</button>
       <button class="home-btn home-btn-red" onclick="APP.goTo('en-start')">Englisch</button>
       <button class="home-btn home-btn-mint" onclick="APP.goTo('ge-start')">Geld</button>
+      <button class="home-btn home-btn-pink" onclick="APP.goTo('ht-start')">Hunderttausender</button>
       <button class="home-btn home-btn-gold" onclick="APP.goTo('worlds')">Welt der Preise</button>
     </div>
   </div>
@@ -389,6 +390,86 @@
     <div id="pl-end" class="end-screen hidden">
       <h2 id="pl-end-title"></h2><p id="pl-end-msg"></p><div id="pl-end-stats"></div>
       <button class="restart-btn" onclick="PL.backToStart()">Nochmal spielen</button>
+      <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
+    </div>
+  </div>
+
+  <!-- ===== HUNDERTTAUSENDER START ===== -->
+  <div id="ht-start-screen" class="screen hidden">
+    <div class="game-topbar">
+      <button class="back-btn" onclick="APP.goTo('home')">Zurück</button>
+      <div id="ht-points" class="points-bar-sm"></div>
+    </div>
+    <h1 class="section-title">Hunderttausender</h1>
+    <div class="start-img-wrap"><img src="images/mouse_start.png" alt="Maus" class="start-img"></div>
+    <p class="selector-label">Welche Übung?</p>
+    <div id="ht-mode-selector" class="cat-selector">
+      <button class="cat-btn selected" data-mode="mix" onclick="HT.selectMode(this)">Gemischt</button>
+      <button class="cat-btn" data-mode="zerlegen" onclick="HT.selectMode(this)">Zahlen zerlegen</button>
+      <button class="cat-btn" data-mode="wort" onclick="HT.selectMode(this)">Lesen &amp; schreiben</button>
+      <button class="cat-btn" data-mode="tafel" onclick="HT.selectMode(this)">Stellenwerttafel</button>
+    </div>
+    <p id="ht-mode-hint" class="mode-hint"></p>
+    <div class="pv-legend">HT = Hunderttausender &middot; ZT = Zehntausender &middot; T = Tausender &middot; H = Hunderter &middot; Z = Zehner &middot; E = Einer</div>
+    <p class="selector-label">Wie viele Aufgaben?</p>
+    <div id="ht-count-selector" class="count-selector count-selector-5">
+      <button class="count-btn" data-count="10" onclick="HT.selectCount(this)">10</button>
+      <button class="count-btn selected" data-count="20" onclick="HT.selectCount(this)">20</button>
+      <button class="count-btn" data-count="30" onclick="HT.selectCount(this)">30</button>
+      <button class="count-btn" data-count="40" onclick="HT.selectCount(this)">40</button>
+      <button class="count-btn" data-count="50" onclick="HT.selectCount(this)">50</button>
+    </div>
+    <div class="fg-section">
+      <button id="ht-fg-btn" class="count-btn fg-btn disabled" onclick="HT.selectFastGeschafft()">Fast geschafft</button>
+      <p id="ht-fg-info" class="fg-info">Noch keine Fehler gespeichert</p>
+    </div>
+    <p id="ht-start-count" class="start-count">20 Aufgaben (Gemischt)</p>
+    <button class="start-btn" onclick="HT.startGame()">Los geht's!</button>
+    <div class="history-section">
+      <button id="ht-history-toggle" class="history-toggle" onclick="HT.toggleHistory()">Historie anzeigen</button>
+      <div id="ht-history-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== HUNDERTTAUSENDER GAME ===== -->
+  <div id="ht-game-screen" class="screen hidden">
+    <div class="game-topbar game-topbar-end"><button class="back-btn end-btn" onclick="HT.endEarly()">Ende</button></div>
+    <header><h1>Hunderttausender</h1>
+      <div class="score-bar"><span id="ht-score-text">0 / 0</span>
+        <div class="progress-track"><div id="ht-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+    <div id="ht-scene" class="scene-container"><img id="ht-mouse-img" src="images/mouse_correct.png" alt="Maus" class="mouse-img"><div id="ht-particles" class="particles"></div></div>
+    <div id="ht-question-area" class="question-area">
+      <p id="ht-prompt-label" class="prompt-text"></p>
+      <div id="ht-task-display" class="ht-task-display"></div>
+      <div class="pv-table">
+        <div class="pv-col"><span class="pv-head">HT</span><span class="pv-cell" id="ht-cell-0" onclick="HT.selectCell(0)"></span></div>
+        <div class="pv-col"><span class="pv-head">ZT</span><span class="pv-cell" id="ht-cell-1" onclick="HT.selectCell(1)"></span></div>
+        <div class="pv-col"><span class="pv-head">T</span><span class="pv-cell" id="ht-cell-2" onclick="HT.selectCell(2)"></span></div>
+        <div class="pv-col pv-col-sep"><span class="pv-head">H</span><span class="pv-cell pv-cell-ones" id="ht-cell-3" onclick="HT.selectCell(3)"></span></div>
+        <div class="pv-col"><span class="pv-head">Z</span><span class="pv-cell pv-cell-ones" id="ht-cell-4" onclick="HT.selectCell(4)"></span></div>
+        <div class="pv-col"><span class="pv-head">E</span><span class="pv-cell pv-cell-ones" id="ht-cell-5" onclick="HT.selectCell(5)"></span></div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn" onclick="HT.numpad('1')">1</button><button class="num-btn" onclick="HT.numpad('2')">2</button><button class="num-btn" onclick="HT.numpad('3')">3</button>
+        <button class="num-btn" onclick="HT.numpad('4')">4</button><button class="num-btn" onclick="HT.numpad('5')">5</button><button class="num-btn" onclick="HT.numpad('6')">6</button>
+        <button class="num-btn" onclick="HT.numpad('7')">7</button><button class="num-btn" onclick="HT.numpad('8')">8</button><button class="num-btn" onclick="HT.numpad('9')">9</button>
+        <button class="num-btn num-del" onclick="HT.numpad('del')">&#9003;</button><button class="num-btn" onclick="HT.numpad('0')">0</button><button class="num-btn num-ok" onclick="HT.numpad('ok')">OK</button>
+      </div>
+      <div id="ht-feedback" class="hidden"></div>
+      <div id="ht-explain-box" class="hidden"></div>
+    </div>
+    <div id="ht-break" class="break-screen hidden">
+      <div class="break-card"><h2>Kurze Pause!</h2><p>Du machst das super.</p>
+        <div class="break-img-wrap"><img id="ht-break-img" src="" alt="Pause"></div>
+        <div class="break-countdown"><div class="break-timer-track"><div id="ht-break-fill" class="break-timer-fill"></div></div><span id="ht-break-timer">20</span><span> Sekunden</span></div>
+        <button class="break-skip" onclick="HT.skipBreak()">Weiter</button>
+      </div>
+    </div>
+    <div id="ht-end" class="end-screen hidden">
+      <h2 id="ht-end-title"></h2><p id="ht-end-msg"></p><div id="ht-end-stats"></div>
+      <button class="restart-btn" onclick="HT.backToStart()">Nochmal spielen</button>
       <button class="home-link" onclick="APP.goTo('home')">Zur Startseite</button>
     </div>
   </div>
@@ -750,17 +831,18 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=38"></script>
-<script src="app.js?v=38"></script>
-<script src="game_einmaleins.js?v=38"></script>
-<script src="game_durch.js?v=38"></script>
-<script src="game_plus.js?v=38"></script>
-<script src="game_minus.js?v=38"></script>
-<script src="game_rechtschreibung.js?v=38"></script>
-<script src="game_english.js?v=38"></script>
-<script src="game_geld.js?v=38"></script>
-<script src="stats.js?v=38"></script>
-<script src="profiles.js?v=38"></script>
+<script src="firebase-config.js?v=39"></script>
+<script src="app.js?v=39"></script>
+<script src="game_einmaleins.js?v=39"></script>
+<script src="game_durch.js?v=39"></script>
+<script src="game_plus.js?v=39"></script>
+<script src="game_minus.js?v=39"></script>
+<script src="game_rechtschreibung.js?v=39"></script>
+<script src="game_english.js?v=39"></script>
+<script src="game_geld.js?v=39"></script>
+<script src="game_hunderttausender.js?v=39"></script>
+<script src="stats.js?v=39"></script>
+<script src="profiles.js?v=39"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();

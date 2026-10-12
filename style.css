@@ -64,6 +64,7 @@ body {
 .home-btn-gold { background: linear-gradient(135deg, #f5d98e, #e8a960); }
 .home-btn-red { background: linear-gradient(135deg, #f0a8a8, #d86b6b); }
 .home-btn-mint { background: linear-gradient(135deg, #a8ddc8, #4fa98a); }
+.home-btn-pink { background: linear-gradient(135deg, #f0b8d8, #d87ab0); }
 
 /* === TOPBAR === */
 .game-topbar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 440px; gap: 8px; }
@@ -169,6 +170,32 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 .wrong-fb-path { text-align: left; max-width: 380px; }
 .wrong-answer-line { font-weight: 700; margin-bottom: 6px; }
 .solution-path { font-size: 14px; font-weight: 500; color: #6b4040; line-height: 1.5; padding-top: 4px; border-top: 1px solid #e8b8b8; }
+
+/* === HUNDERTTAUSENDER (Stellenwerttafel) === */
+.mode-hint { font-size: 13px; color: #7a6b5d; max-width: 320px; text-align: center; line-height: 1.4; }
+.pv-legend { font-size: 11px; color: #9a8b7d; max-width: 340px; text-align: center; line-height: 1.5; }
+
+/* Aufgaben-Anzeige (Summe / Zahlwort / Stellenwert-Teile) */
+.ht-task-display { font-weight: 700; color: #4a3f36; max-width: 420px; line-height: 1.4; word-break: break-word; min-height: 44px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.ht-task-sum { font-size: 26px; letter-spacing: 0.5px; }
+.ht-task-word { font-size: 22px; color: #b05a86; }
+.ht-task-tokens { font-size: 28px; letter-spacing: 1px; color: #5b4a8a; }
+
+/* Stellenwerttafel-Eingabe */
+.pv-table { display: flex; justify-content: center; gap: 6px; margin: 4px 0; }
+.pv-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pv-col-sep { margin-left: 14px; }
+.pv-head { font-size: 14px; font-weight: 700; color: #7a6b5d; }
+.pv-cell { width: 46px; height: 56px; border: 3px solid #d4cbbf; border-radius: 12px; background: #fffdf8; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 800; color: #4a3f36; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.12s ease; }
+.pv-cell-ones { background: #fdf6ee; }
+.pv-cell-active { border-color: #d87ab0; box-shadow: 0 0 0 3px rgba(216,122,176,0.25); }
+.pv-cell-ok { border-color: #7ec88b; background: #d4f0c4; color: #2d6a2e; }
+.pv-cell-bad { border-color: #e8a0a0; background: #f7d4d4; color: #8b2d2d; }
+
+/* Erklärbox nach Fehler */
+.ht-explain { background: #fff8e8; border: 2px solid #f0d890; border-radius: 12px; padding: 10px 16px; max-width: 400px; font-size: 15px; line-height: 1.5; color: #6b5a2e; text-align: center; }
+.ht-explain .rule-title { font-weight: 700; color: #8b6914; margin-bottom: 4px; }
+.ht-explain .rule-text { font-weight: 600; margin: 2px 0; }
 
 /* === END SCREEN === */
 .end-screen { text-align: center; padding: 24px 16px; background: #fffdf8; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; }
