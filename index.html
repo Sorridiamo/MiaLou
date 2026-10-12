@@ -12,8 +12,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="style.css?v=40">
-  <link rel="stylesheet" href="style_profiles.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
+  <link rel="stylesheet" href="style_profiles.css?v=41">
 </head>
 <body>
 <div id="app">
@@ -408,6 +408,8 @@
       <button class="cat-btn" data-mode="zerlegen" onclick="HT.selectMode(this)">Zahlen zerlegen</button>
       <button class="cat-btn" data-mode="wort" onclick="HT.selectMode(this)">Lesen &amp; schreiben</button>
       <button class="cat-btn" data-mode="tafel" onclick="HT.selectMode(this)">Stellenwerttafel</button>
+      <button class="cat-btn" data-mode="nachbar" onclick="HT.selectMode(this)">Nachbarzahlen</button>
+      <button class="cat-btn" data-mode="zahlenstrahl" onclick="HT.selectMode(this)">Zahlenstrahl</button>
     </div>
     <p id="ht-mode-hint" class="mode-hint"></p>
     <div class="pv-legend">HT = Hunderttausender &middot; ZT = Zehntausender &middot; T = Tausender &middot; H = Hunderter &middot; Z = Zehner &middot; E = Einer</div>
@@ -831,18 +833,18 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js?v=40"></script>
-<script src="app.js?v=40"></script>
-<script src="game_einmaleins.js?v=40"></script>
-<script src="game_durch.js?v=40"></script>
-<script src="game_plus.js?v=40"></script>
-<script src="game_minus.js?v=40"></script>
-<script src="game_rechtschreibung.js?v=40"></script>
-<script src="game_english.js?v=40"></script>
-<script src="game_geld.js?v=40"></script>
-<script src="game_hunderttausender.js?v=40"></script>
-<script src="stats.js?v=40"></script>
-<script src="profiles.js?v=40"></script>
+<script src="firebase-config.js?v=41"></script>
+<script src="app.js?v=41"></script>
+<script src="game_einmaleins.js?v=41"></script>
+<script src="game_durch.js?v=41"></script>
+<script src="game_plus.js?v=41"></script>
+<script src="game_minus.js?v=41"></script>
+<script src="game_rechtschreibung.js?v=41"></script>
+<script src="game_english.js?v=41"></script>
+<script src="game_geld.js?v=41"></script>
+<script src="game_hunderttausender.js?v=41"></script>
+<script src="stats.js?v=41"></script>
+<script src="profiles.js?v=41"></script>
 <script>
   /* Start erst, wenn alle Module geladen sind (APP braucht PROFILES). */
   APP.startWhenReady();

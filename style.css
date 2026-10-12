@@ -186,6 +186,19 @@ header h1 { font-size: 26px; font-weight: 700; color: #5b4a3f; margin-bottom: 8p
 .ht-word-thousands { color: #3a6ea5; }
 .ht-word-ones { color: #c47a2e; }
 
+/* Aufgabentyp "Nachbarzahlen" */
+.ht-task-nachbar { flex-direction: column; gap: 6px; }
+.ht-nachbar-base { font-size: 30px; letter-spacing: 0.5px; color: #4a3f36; }
+.ht-nachbar-ask { font-size: 18px; font-weight: 600; color: #c47a2e; }
+
+/* Aufgabentyp "Zahlenstrahl" */
+.ht-task-zahlenstrahl { flex-direction: column; max-width: 480px; width: 100%; }
+.ht-numberline-wrap { width: 100%; padding: 6px 10px 28px; }
+.ht-nl-labels { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; color: #4a3f36; margin-bottom: 10px; }
+.ht-numberline { position: relative; height: 3px; background: #9a8b7d; border-radius: 2px; margin: 0 2px; }
+.ht-nl-tick { position: absolute; top: -6px; width: 2px; height: 12px; background: #c9bba9; transform: translateX(-50%); }
+.ht-nl-marker { position: absolute; top: 6px; transform: translateX(-50%); font-size: 20px; line-height: 1; color: #c47a2e; }
+
 /* Stellenwerttafel-Eingabe */
 .pv-table { display: flex; justify-content: center; gap: 6px; margin: 4px 0; }
 .pv-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }

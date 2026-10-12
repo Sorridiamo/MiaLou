@@ -28,21 +28,27 @@ var HT = (function () {
   var BREAK_EVERY = 20;
 
   var MODES = [
-    { id: 'mix',      label: 'Gemischt' },
-    { id: 'zerlegen', label: 'Zahlen zerlegen' },
-    { id: 'wort',     label: 'Lesen & schreiben' },
-    { id: 'tafel',    label: 'Stellenwerttafel' }
+    { id: 'mix',          label: 'Gemischt' },
+    { id: 'zerlegen',     label: 'Zahlen zerlegen' },
+    { id: 'wort',         label: 'Lesen & schreiben' },
+    { id: 'tafel',        label: 'Stellenwerttafel' },
+    { id: 'nachbar',      label: 'Nachbarzahlen' },
+    { id: 'zahlenstrahl', label: 'Zahlenstrahl' }
   ];
   var MODE_HINT = {
-    mix:      'Alle drei Übungen gemischt.',
-    zerlegen: 'Du siehst eine Summe (z.B. 400\'000 + 30\'000 + …) und schreibst die Zahl in die Tafel.',
-    wort:     'Du liest ein Zahlwort und schreibst die Zahl in die Tafel.',
-    tafel:    'Du siehst einzelne Stellenwerte (z.B. 3HT 9T 5H) und setzt die Zahl zusammen.'
+    mix:          'Alle Übungen gemischt.',
+    zerlegen:     'Du siehst eine Summe (z.B. 400\'000 + 30\'000 + …) und schreibst die Zahl in die Tafel.',
+    wort:         'Du liest ein Zahlwort und schreibst die Zahl in die Tafel.',
+    tafel:        'Du siehst einzelne Stellenwerte (z.B. 3HT 9T 5H) und setzt die Zahl zusammen.',
+    nachbar:      'Du siehst eine Zahl und suchst eine Nachbarzahl (z.B. 10\'000 mehr oder weniger).',
+    zahlenstrahl: 'Du liest eine Zahl auf dem Zahlenstrahl ab und schreibst sie in die Tafel.'
   };
   var MODE_LABELS = {   // kurze Anweisung oben in der Aufgabe
-    zerlegen: 'Schreibe die Zahl in die Stellenwerttafel.',
-    wort:     'Lies und schreibe die Zahl.',
-    tafel:    'Trage die Zahl in die Stellenwerttafel ein.'
+    zerlegen:     'Schreibe die Zahl in die Stellenwerttafel.',
+    wort:         'Lies und schreibe die Zahl.',
+    tafel:        'Trage die Zahl in die Stellenwerttafel ein.',
+    nachbar:      'Finde die gesuchte Nachbarzahl und schreibe sie in die Tafel.',
+    zahlenstrahl: 'Welche Zahl zeigt die Markierung? Schreibe sie in die Tafel.'
   };
 
   var ABBR = ['HT', 'ZT', 'T', 'H', 'Z', 'E'];
@@ -190,6 +196,65 @@ var HT = (function () {
     return m[Math.floor(Math.random() * 3)];
   }
 
+  // Für "Gemischt": alle fünf Aufgabentypen gleich wahrscheinlich.
+  function randModeFull() {
+    var m = ['zerlegen', 'wort', 'tafel', 'nachbar', 'zahlenstrahl'];
+    return m[Math.floor(Math.random() * m.length)];
+  }
+
+  // === Aufgabentyp "Nachbarzahlen" ===
+  // Zu einer Zahl wird eine bestimmte Nachbarzahl gesucht (Vorgänger/
+  // Nachfolger, oder ±10'000 / ±100'000). Die Antwort (die Nachbarzahl)
+  // kommt unverändert in die bestehende Stellenwerttafel-Eingabe.
+  var NACHBAR_OFFSETS = [
+    { delta: -1,      label: 'Vorgänger (−1)' },
+    { delta: 1,       label: 'Nachfolger (+1)' },
+    { delta: -10000,  label: '10\'000 weniger' },
+    { delta: 10000,   label: '10\'000 mehr' },
+    { delta: -100000, label: '100\'000 weniger' },
+    { delta: 100000,  label: '100\'000 mehr' }
+  ];
+  function generateNachbarTask() {
+    for (var tries = 0; tries < 30; tries++) {
+      var o = NACHBAR_OFFSETS[Math.floor(Math.random() * NACHBAR_OFFSETS.length)];
+      var base = generateNumber();
+      var answer = base + o.delta;
+      if (answer >= 0 && answer <= 999999) {
+        return { n: answer, base: base, offsetLabel: o.label };
+      }
+    }
+    return { n: 490000, base: 500000, offsetLabel: '10\'000 weniger' };
+  }
+
+  // === Aufgabentyp "Zahlenstrahl" ===
+  // Ein Zahlenstrahl-Abschnitt (start -> end) wird in 10 gleiche Teile
+  // geteilt; eine Markierung zeigt auf einen der Teilstriche. Gesucht ist
+  // die Zahl an dieser Markierung.
+  function generateZahlenstrahlTask() {
+    var spans = [1000, 10000, 100000];
+    var span = spans[Math.floor(Math.random() * spans.length)];
+    var stepsAvail = Math.floor((999999 - span) / span);
+    var start = Math.floor(Math.random() * (stepsAvail + 1)) * span;
+    var end = start + span;
+    var tickIndex = 1 + Math.floor(Math.random() * 9); // 1..9 (nie am Rand)
+    var value = start + (tickIndex * span) / 10;
+    return { n: value, start: start, end: end, tickIndex: tickIndex };
+  }
+
+  // Zeichnet den Zahlenstrahl als HTML (reines CSS, keine Bilder).
+  function renderNumberLine(start, end, tickIndex) {
+    var ticks = '';
+    for (var i = 1; i <= 9; i++) {
+      ticks += '<div class="ht-nl-tick" style="left:' + (i * 10) + '%"></div>';
+    }
+    var markerPct = tickIndex * 10;
+    return '<div class="ht-numberline-wrap">' +
+      '<div class="ht-nl-labels"><span>' + fmt(start) + '</span><span>' + fmt(end) + '</span></div>' +
+      '<div class="ht-numberline">' + ticks +
+      '<div class="ht-nl-marker" style="left:' + markerPct + '%">▲</div>' +
+      '</div></div>';
+  }
+
   // =====================================================================
   // === FEHLER + HISTORIE ===============================================
   // =====================================================================
@@ -325,8 +390,13 @@ var HT = (function () {
     }
     var t = [], seen = {}, attempts = 0;
     while (t.length < selectedCount && attempts < selectedCount * 12) {
-      var n = generateNumber();
-      if (!seen[n]) { seen[n] = true; t.push({ n: n, mode: selectedMode === 'mix' ? randMode() : selectedMode }); }
+      var mode = selectedMode === 'mix' ? randModeFull() : selectedMode;
+      var task;
+      if (mode === 'nachbar') { task = generateNachbarTask(); task.mode = 'nachbar'; }
+      else if (mode === 'zahlenstrahl') { task = generateZahlenstrahlTask(); task.mode = 'zahlenstrahl'; }
+      else { task = { n: generateNumber(), mode: mode }; }
+      var key = mode + ':' + task.n + ':' + (task.base || '') + ':' + (task.start || '') + ':' + (task.tickIndex || '');
+      if (!seen[key]) { seen[key] = true; t.push(task); }
       attempts++;
     }
     return t;
@@ -499,6 +569,14 @@ var HT = (function () {
     } else if (current.mode === 'wort') {
       taskDisplay.className = 'ht-task-display ht-task-word';
       taskDisplay.innerHTML = numberToWordsHtml(current.n);
+    } else if (current.mode === 'nachbar') {
+      taskDisplay.className = 'ht-task-display ht-task-nachbar';
+      taskDisplay.innerHTML =
+        '<div class="ht-nachbar-base">' + fmt(current.base) + '</div>' +
+        '<div class="ht-nachbar-ask">gesucht: ' + esc(current.offsetLabel) + '</div>';
+    } else if (current.mode === 'zahlenstrahl') {
+      taskDisplay.className = 'ht-task-display ht-task-zahlenstrahl';
+      taskDisplay.innerHTML = renderNumberLine(current.start, current.end, current.tickIndex);
     } else {
       taskDisplay.className = 'ht-task-display ht-task-tokens';
       taskDisplay.textContent = tokensStr(current.n);
